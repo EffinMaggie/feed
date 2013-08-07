@@ -152,7 +152,7 @@ for each row when new.mid in (4,5) and julianday(new.value) is not null and juli
 end;
 
 create trigger entrymetaFixTimeRFC822 after insert on entrymeta
-for each row when new.mid in (4,5) and julianday(new.value) is null begin
+for each row when new.mid in (4,5) and julianday(new.value) is null and (length(new.value) >= 26) begin
     update entrymeta
        set value
          = julianday(substr(new.value,13,4)
@@ -174,6 +174,7 @@ for each row when new.mid in (4,5) and julianday(new.value) is null begin
            || 'T' || substr(new.value,18,8))
      where id = new.id;
 end;
+
 create table relation
 (
     id integer primary key,
@@ -501,5 +502,6 @@ insert into feed
     values
     ('http://ef.gy/'),
     ('http://xkcd.com/'),
+    ('http://what-if.xkcd.com/'),
     ('http://thedailywtf.com/')
 ;
