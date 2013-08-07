@@ -245,15 +245,9 @@ namespace feed
             return false;
         }
 
-        if (sqlite3_column_type (stmt, i) != SQLITE_INTEGER)
-        {
-            throw sqlite::exception("tried to access value of column that is not an integer as an integer", sql);
-            return false;
-        }
-
         sqlite3_int64 v = sqlite3_column_int64 (stmt, i);
 
-        value = (long long)value;
+        value = (long long)v;
 
         return true;
     }
@@ -263,12 +257,6 @@ namespace feed
     {
         if (!row)
         {
-            return false;
-        }
-
-        if (sqlite3_column_type (stmt, i) != SQLITE_INTEGER)
-        {
-            throw sqlite::exception("tried to access value of column that is not an integer as an integer", sql);
             return false;
         }
 
@@ -285,15 +273,11 @@ namespace feed
             return false;
         }
 
-        if (sqlite3_column_type (stmt, i) == SQLITE_NULL)
-        {
-            throw sqlite::exception("tried to access value of column that is a null as a string", sql);
-            return false;
-        }
+        const char *v = (const char*)sqlite3_column_text (stmt, i);
 
-        value = (const char*)sqlite3_column_text (stmt, i);
+        value = v ? v : "";
 
-        return true;
+        return v != 0;
     }
 
     template <>
@@ -301,12 +285,6 @@ namespace feed
     {
         if (!row)
         {
-            return false;
-        }
-
-        if (sqlite3_column_type (stmt, i) != SQLITE_FLOAT)
-        {
-            throw sqlite::exception("tried to access value of column that is not a float as a float", sql);
             return false;
         }
 

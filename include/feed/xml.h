@@ -35,6 +35,7 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 #include <libxml/uri.h>
+#include <libxml/HTMLparser.h>
 #include <set>
 
 namespace feed
@@ -58,10 +59,18 @@ namespace feed
         public:
             parser(xml &pXml,
                    const std::string &data,
-                   const std::string &filename)
+                   const std::string &filename,
+                   const bool allowHTML = false)
                 : xml (pXml),
-                  document (xmlReadMemory (data.data(), data.size(), filename.c_str(), NULL, 0))
+                  document (xmlReadMemory (data.data(), data.size(), filename.c_str(), 0,
+                            XML_PARSE_NOERROR | XML_PARSE_NOWARNING))
             {
+                if ((document == 0) && allowHTML)
+                {
+                    document = (xmlDocPtr)htmlReadMemory (data.data(), data.size(), filename.c_str(), 0,
+                                HTML_PARSE_RECOVER | HTML_PARSE_NOERROR | HTML_PARSE_NOWARNING);
+                }
+
                 if (document == 0)
                 {
                     throw exception("failed to parse xml file " + filename);
@@ -201,23 +210,26 @@ namespace feed
 
         parser parse
             (const std::string &data,
-             const std::string &filename)
+             const std::string &filename,
+             const bool allowHTML = false)
         {
-            return parser(*this, data, filename);
+            return parser(*this, data, filename, allowHTML);
         }
 
         parser parse
-            (const int downloadID)
+            (const int downloadID,
+             const bool allowHTML = false)
         {
             download::data data = download.retrieve (downloadID);
-            return parse(data.content, data.filename);
+            return parse(data.content, data.filename, allowHTML);
         }
 
         parser parse
-            (const std::string &uri)
+            (const std::string &uri,
+             const bool allowHTML = false)
         {
             download::data data = download.retrieve (uri);
-            return parse(data.content, data.filename);
+            return parse(data.content, data.filename, allowHTML);
         }
 
         bool parseURI
@@ -250,6 +262,26 @@ namespace feed
             xmlFreeURI (output);
 
             return true;
+        }
+
+        std::string buildURI
+            (const std::string &uri,
+             const std::string &base) const
+        {
+            char *resultc = (char*)xmlBuildURI((const xmlChar *)uri.c_str(), (const xmlChar *)base.c_str());
+            std::string result;
+
+            if (resultc)
+            {
+                result = resultc;
+                free (resultc);
+            }
+            else
+            {
+                result = uri;
+            }
+
+            return result;
         }
 
     protected:

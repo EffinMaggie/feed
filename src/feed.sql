@@ -40,9 +40,7 @@ create table feed
 (
     id integer primary key,
     sid integer null,
-    source text,
-
-    unique (sid, source),
+    source text not null unique,
 
     foreign key (sid) references service(id)
 );
@@ -55,7 +53,7 @@ insert into service
     ( 2, 'Whois lookup', 0.2, 0, 1, 1),
     ( 3, 'DNS lookup', 0.05, 0, 1, 1),
     ( 5, 'XHTML feed gatherer', 0.1, 1, 1, 1),
-    ( 6, 'HTML feed gatherer', 0.1, 1, 1, 0),
+    ( 6, 'HTML feed gatherer', 0.1, 1, 1, 1),
     ( 7, 'Download', 0.05, 0, 1, 1)
 ;
 
@@ -501,7 +499,7 @@ insert or replace into option
 insert into feed
     (source)
     values
-    ('http://ef.gy/atom/site'),
-    ('http://xkcd.com/atom.xml'),
-    ('http://syndication.thedailywtf.com/TheDailyWtf')
+    ('http://ef.gy/'),
+    ('http://xkcd.com/'),
+    ('http://thedailywtf.com/')
 ;

@@ -26,8 +26,8 @@
  * THE SOFTWARE.
 */
 
-#if !defined(FEED_XHTML_H)
-#define FEED_XHTML_H
+#if !defined(FEED_HTML_H)
+#define FEED_HTML_H
 
 #include <feed/handler.h>
 #include <feed/entry.h>
@@ -35,11 +35,11 @@
 
 namespace feed
 {
-    class xhtml : public handler
+    class html : public handler
     {
     public:
-        xhtml(configuration &pConfiguration, const bool &pEnabled, xml &pXml)
-            : handler(pConfiguration, stXHTML, pEnabled), xml(pXml),
+        html(configuration &pConfiguration, const bool &pEnabled, xml &pXml)
+            : handler(pConfiguration, stHTML, pEnabled), xml(pXml),
               insertFeed("insert or ignore into feed (source) values (?1)", context.sql)
         {}
 
@@ -52,15 +52,31 @@ namespace feed
                 return false;
             }
 
-            if (st != stXHTML)
+            if (st != stHTML)
             {
                 return false;
             }
-            std::cerr << "X";
+            std::cerr << "H";
 
             try
             {
-                xml::parser parser = xml.parse (feed.source);
+                xml::parser parser = xml.parse (feed.source, true);
+
+                if (parser.updateContext ("/html/head/link[@rel='alternate'][1]"))
+                do
+                {
+                    std::string href = parser.evaluate ("@href");
+                    if (href == "")
+                    {
+                        continue;
+                    }
+
+                    insertFeed.bind (1, xml.buildURI(href, feed.source));
+                    insertFeed.stepReset();
+
+                    std::cerr << "h";
+                }
+                while (parser.updateContext ("following-sibling::link[@rel='alternate'][1]"));
 
                 if (parser.updateContext ("/xhtml:html/xhtml:head/xhtml:link[@rel='alternate'][1]"))
                 do
@@ -74,7 +90,7 @@ namespace feed
                     insertFeed.bind (1, xml.buildURI(href, feed.source));
                     insertFeed.stepReset();
 
-                    std::cerr << "x";
+                    std::cerr << "h";
                 }
                 while (parser.updateContext ("following-sibling::xhtml:link[@rel='alternate'][1]"));
             }

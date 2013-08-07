@@ -37,9 +37,10 @@
 #include <feed/whois.h>
 #include <feed/dns.h>
 #include <feed/xhtml.h>
+#include <feed/html.h>
 
 #if !defined(DEFAULT_OPTIONS)
-#define DEFAULT_OPTIONS "WARDNX"
+#define DEFAULT_OPTIONS "WARDNXH"
 #endif
 
 #if !defined(DEFAULT_DATABASE)
@@ -65,6 +66,7 @@ namespace feed
         bool processWHOIS = false;
         bool processDNS = false;
         bool processXHTML = false;
+        bool processHTML = false;
         bool forkToBackground = false;
 
         sqlite sql(dbfile);
@@ -80,6 +82,7 @@ namespace feed
                 case 'W': processWHOIS = true; break;
                 case 'N': processDNS = true; break;
                 case 'X': processXHTML = true; break;
+                case 'H': processHTML = true; break;
             }
         }
 
@@ -98,6 +101,7 @@ namespace feed
         whois whois(configuration, processWHOIS, download, xml);
         dns dns(configuration, processDNS, xml);
         xhtml xhtml(configuration, processXHTML, xml);
+        html html(configuration, processHTML, xml);
 
         try
         {
@@ -140,6 +144,7 @@ namespace feed
                             whois.handle    (st, feed) && feed.serviceUpdate(st);
                             dns.handle      (st, feed) && feed.serviceUpdate(st);
                             xhtml.handle    (st, feed) && feed.serviceUpdate(st);
+                            html.handle     (st, feed) && feed.serviceUpdate(st);
                             download.handle (st, feed) && feed.serviceUpdate(st);
                         }   break;
                         case ctQuery:
@@ -186,6 +191,7 @@ namespace feed
                             clear = dns.handleCompleteDownload      (st, did) || clear;
                             clear = download.handleCompleteDownload (st, did) || clear;
                             clear = xhtml.handleCompleteDownload    (st, did) || clear;
+                            clear = html.handleCompleteDownload     (st, did) || clear;
 
                             if (clear)
                             {
