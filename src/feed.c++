@@ -26,13 +26,25 @@
  * THE SOFTWARE.
 */
 
+#define DEFAULT_OPTIONS "BWARDNXH"
+
 #include <cstdlib>
 #include <feed/daemon.h>
 
 int main (int argc, char**argv)
 {
-    const char *opts = (argc > 1 ? argv[1] : DEFAULT_OPTIONS);
-    const char *dbfile = (argc > 2 ? argv[2] : DEFAULT_DATABASE);
+    const char *opts = DEFAULT_OPTIONS;
+    const char *dbfile = DEFAULT_DATABASE;
+
+    if (argc > 1)
+    {
+        opts = argv[1];
+    }
+
+    if (argc > 2)
+    {
+        dbfile = argv[2];
+    }
 
     if (opts == DEFAULT_OPTIONS)
     {

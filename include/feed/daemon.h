@@ -38,6 +38,7 @@
 #include <feed/dns.h>
 #include <feed/xhtml.h>
 #include <feed/html.h>
+#include <feed/data-feed.h>
 
 #if !defined(DEFAULT_OPTIONS)
 #define DEFAULT_OPTIONS "WARDNXH"
@@ -57,7 +58,7 @@
 
 namespace feed
 {
-    static int processDaemon (const char *opts, const char* dbfile, bool &background)
+    static int processDaemon (const std::string &opts, const std::string &dbfile, bool &background)
     {
         char *errmsg = 0;
         bool processAtom = false;
@@ -69,9 +70,9 @@ namespace feed
         bool processHTML = false;
         bool forkToBackground = false;
 
-        sqlite sql(dbfile);
+        sqlite sql(dbfile, data::feed);
 
-        for (int i = 0; opts[i]; i++)
+        for (int i = 0; i < opts.size(); i++)
         {
             switch (opts[i])
             {

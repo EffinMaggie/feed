@@ -1,3 +1,4 @@
 *.swp
-bin/feedd
+bin/feed*
 data.feed
+include/feed/data-*.h

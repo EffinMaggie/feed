@@ -33,25 +33,31 @@
 #include <feed/exception.h>
 #include <sqlite3.h>
 #include <string>
+#include <iostream>
 
 namespace feed
 {
     class sqlite
     {
     public:
-        sqlite(const char *databaseFile)
+        sqlite(const std::string &databaseFile)
         {
-            if (sqlite3_open(databaseFile, &database) != SQLITE_OK)
+            if (sqlite3_open(databaseFile.c_str(), &database) != SQLITE_OK)
             {
                 throw sqlite::exception(std::string("could not open database ") + databaseFile);
             }
         }
 
-        sqlite(const std::string &databaseFile)
+        sqlite(const std::string &databaseFile, const char *reference)
         {
-            if (sqlite3_open(databaseFile.c_str(), &database) != SQLITE_OK)
+            if (sqlite3_open_v2(databaseFile.c_str(), &database, SQLITE_OPEN_READWRITE, 0) != SQLITE_OK)
             {
-                throw sqlite::exception("could not open database " + databaseFile);
+                if (sqlite3_open(databaseFile.c_str(), &database) != SQLITE_OK)
+                {
+                    throw sqlite::exception(std::string("could not open database ") + databaseFile);
+                }
+
+                import(reference);
             }
         }
 
@@ -181,6 +187,29 @@ namespace feed
         operator sqlite3 * (void)
         {
             return database;
+        }
+
+        bool import (const char *data)
+        {
+            size_t pos = 0;
+            const char *tail = data;
+
+            do
+            {
+                const char *ntail;
+                sqlite3_stmt *stmt = 0;
+                if (sqlite3_prepare_v2 (database, tail, -1, &stmt, &ntail) == SQLITE_OK)
+                {
+                    if (sqlite3_step(stmt) == SQLITE_ERROR)
+                    {
+                        std::cerr << "import: " << sqlite3_errmsg(database) << "\n";
+                    }
+                    sqlite3_finalize(stmt);
+                    tail = ntail;
+                }
+            } while ((tail != 0) && (*tail != (char)0));
+
+            return true;
         }
 
     protected:

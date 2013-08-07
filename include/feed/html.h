@@ -96,12 +96,7 @@ namespace feed
             }
             catch (exception &e)
             {
-                std::cerr << "EXCEPTION: " << e.string << "\n";
-                return true;
-            }
-            catch (std::string &e)
-            {
-                std::cerr << "EXCEPTION: " << e << "\n";
+                // std::cerr << "EXCEPTION: " << e.string << "\n";
                 return true;
             }
 
