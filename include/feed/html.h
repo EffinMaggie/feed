@@ -62,7 +62,7 @@ namespace feed
             {
                 xml::parser parser = xml.parse (feed.source, true);
 
-                if (parser.updateContext ("/html/head/link[@rel='alternate'][1]"))
+                if (parser.updateContext ("/html/head/link[@rel='alternate'][(@type='application/atom+xml') or (@type='application/rss+xml')][1]"))
                 do
                 {
                     std::string href = parser.evaluate ("@href");
@@ -76,9 +76,9 @@ namespace feed
 
                     std::cerr << "h";
                 }
-                while (parser.updateContext ("following-sibling::link[@rel='alternate'][1]"));
+                while (parser.updateContext ("following-sibling::link[@rel='alternate'][(@type='application/atom+xml') or (@type='application/rss+xml')][1]"));
 
-                if (parser.updateContext ("/xhtml:html/xhtml:head/xhtml:link[@rel='alternate'][1]"))
+                if (parser.updateContext ("/xhtml:html/xhtml:head/xhtml:link[@rel='alternate'][(@type='application/atom+xml') or (@type='application/rss+xml')][1]"))
                 do
                 {
                     std::string href = parser.evaluate ("@href");
@@ -92,7 +92,7 @@ namespace feed
 
                     std::cerr << "h";
                 }
-                while (parser.updateContext ("following-sibling::xhtml:link[@rel='alternate'][1]"));
+                while (parser.updateContext ("following-sibling::xhtml:link[@rel='alternate'][(@type='application/atom+xml') or (@type='application/rss+xml')][1]"));
             }
             catch (exception &e)
             {

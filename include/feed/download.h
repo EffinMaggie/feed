@@ -184,7 +184,7 @@ namespace feed
                 }
                 else
                 {
-                    throw exception("tried to retrieve data from nonexistent download");
+                    throw exception("tried to retrieve data of nonexistent download");
                 }
             }
 
@@ -212,7 +212,7 @@ namespace feed
             stmt.step ();
             if (!stmt.row)
             {
-                throw exception("tried to retrieve data from nonexistent download at " + uri);
+                throw exception("tried to retrieve data of nonexistent download at " + uri);
             }
 
             int downloadID;
@@ -234,7 +234,7 @@ namespace feed
             stmt.step ();
             if (!stmt.row)
             {
-                throw exception("tried to retrieve data from nonexistent download at " + uri + " with payload " + payload);
+                throw exception("tried to retrieve data of nonexistent download at " + uri + " with payload " + payload);
             }
 
             int downloadID;
