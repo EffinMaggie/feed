@@ -248,7 +248,7 @@ namespace feed
         {
         public:
             transfer(const std::string &pUri, download &pDownload, const std::string &pPayload = "", const enum servicetype &pService = stDownload)
-                : uri(pUri), download(pDownload), content_length(-1), blob(0), offset(0L), payload(pPayload)
+                : uri(pUri), download(pDownload), content_length(-1), blob(0), offset(0L), payload(pPayload), headers(0)
             {
                 {
                     sqlite::statement stmt
@@ -310,6 +310,13 @@ namespace feed
                     throw exceptionCURL("curl_easy_setopt(...,CURLOPT_FOLLOWLOCATION,...)");
                 }
 
+                headers = curl_slist_append(headers, "Accept: application/xhtml+xml, */*");
+
+                if (curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers) != CURLSHE_OK)
+                {
+                    throw exceptionCURL("curl_easy_setopt(...,CURLOPT_HTTPHEADER,...)");
+                }
+
                 if ((download.context.proxy != "")
                  && (curl_easy_setopt(handle, CURLOPT_PROXY, download.context.proxy.c_str()) != CURLE_OK))
                 {
@@ -354,6 +361,8 @@ namespace feed
 
                 download.transfermap.erase(handle);
                 download.transfers.erase(this);
+
+                curl_slist_free_all(headers);
             }
 
         protected:
@@ -471,6 +480,7 @@ namespace feed
             int id;
             download &download;
             CURL *handle;
+            struct curl_slist *headers;
             sqlite3_blob *blob;
             double content_length;
             size_t offset;
