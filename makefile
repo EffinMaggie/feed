@@ -1,6 +1,7 @@
 BINARIES:=bin/feedd bin/feed
 INCLUDES:=$(wildcard include/feed/*.h)
-INSTALLTARGETS:=$(BINARIES) $(INCLUDES) include/feed/data-feed.h
+MANPAGES:=$(addprefix share/man/man1/,$(notdir $(wildcard src/*.1)))
+INSTALLTARGETS:=$(BINARIES) $(INCLUDES) $(MANPAGES) include/feed/data-feed.h
 TARGETS:=$(BINARIES) include/feed/data-feed.h
 DESTDIR:=/usr/local
 
@@ -44,6 +45,9 @@ uninstall:
 	rm -f $(addprefix $(DESTDIR)/,$(INSTALLTARGETS))
 
 $(DESTDIR)/%: %
+	$(INSTALL) -D $< $@
+
+$(DESTDIR)/share/man/man1/%.1: src/%.1
 	$(INSTALL) -D $< $@
 
 data.feed: src/feed.sql

@@ -1,0 +1,208 @@
+.TH FEED 1 "AUGUST 2013" FEED "Application Manuals"
+
+.SH NAME
+feed \- read syndication feeds
+
+.SH SYNOPSIS
+.B feed [--skip-daemon] [--daemon
+.I daemon-parameters
+.B ] [--database
+.I database-file
+.B ] [
+.I query
+.B ] [
+.I macro
+.B ]
+
+.SH DESCRIPTION
+.B feed
+is a programme to read Atom and RSS feeds from the comfort of your shell.
+
+The feed data is stored in a SQLite3 database, and the task of querying the
+syndication feeds is handled by a background process that is launched
+automatically.
+
+.SH EXAMPLES
+.IP "$ feed"
+Launch the background process if it's not running, create a suitable database
+if it doesn't exist and show any unread feed entries.
+.IP "$ feed add http://ef.gy/"
+Sign up to any feeds accessible defined in the headers of the web page at
+.I http://ef.gy/
+.IP "$ feed next"
+Read the newest unread feed entry - or do nothing if everything's been read.
+.IP "$ feed list"
+List all feed entries in the database.
+.IP "$ feed read 666"
+Read the feed entry with ID
+.I 666
+
+.SH OPTIONS
+.IP --skip-daemon
+Don't initialise the feed processing daemon.
+.IP "--daemon daemon-parameters"
+Use the specified
+.I daemon-parameters
+instead of the built in defaults. See
+.BR feedd (1)
+for the format of these parameters.
+.B feed
+will always add the
+.B D
+flag to launch the daemon in the background, regardless of what other options
+you pass with this parameter.
+.IP "--database database-file"
+Use
+.I database-file
+instead of the default as set in the environment.
+.IP "query query-parameters ..."
+Execute the given
+.I query
+with the given parameters. These queries are defined in the database file, so
+there's no guarantees on what's in there. See below for a summary of the
+default queries. You can pass more than one query - if you do, they're
+processed in sequence.
+.IP "macro macro-parameters ..."
+Execute the given
+.I macro
+with the given parameters. Like queries, macros are also stored in the database
+file and the default set of macros is described below. If you pass more than
+than one macro then all of them are processed in sequence.
+
+.SH QUERIES
+Queries have a fixed number of parameters as defined in the database. If the
+client is run without enough parameters for a given query, then an exception
+is thrown as soon as the client runs out of parameters to use.
+
+You can add your own queries by modifying the database file, e.g. by using the
+.BR sqlite3 (1)
+programme. The queries are stored in the
+.B query
+table.
+
+Queries are case-sensitive.
+
+.IP new
+This is the default query when no queries or macros are specified on the
+command line. When run it will display a listing of all unread feed entries.
+.IP list
+This query will list all feed entries, regardless of whether you've read them
+before or not.
+.IP list-feeds
+List all currently followed feeds.
+.IP clean
+Delete all downloads where there is a newer version of the same location that
+has been successfully downloaded. The background process that deals with the
+feeds will run this query periodically, so you probably won't have to use this
+yourself.
+.IP purge
+Delete all completed downloads, regardless of whether they've been superseded
+by more recent downloads of the same location.
+.IP quit
+Tell any processes currently connected to the database that you'd like them to
+terminate.
+.IP time
+Show the current time in JDN.
+.IP mark-next
+Mark the newest unread feed entry as active.
+.IP mark-read
+Mark the currently active feed entry as read.
+.IP title-marked
+Show the headline for the currently active feed entry.
+.IP all-read
+Mark all feed entries as read.
+.IP add URI
+Add a feed specified by
+.I URI
+- this will automatically retrieve the referenced resource periodically. If
+the resource is an Atom or RSS feed, then all entries will automatically be
+added as new, unread feed entries. If it's a HTML or XHTML file, then
+.B feed
+will try to parse it and add any feeds specified in the file's metadata.
+.IP remove URI
+Remove the feed specified by
+.I URI
+but keep any entries that have been processed.
+.IP use-proxy URI
+Use the proxy specified by
+.I URI
+when downloading data. This setting may not be applied until any background
+processes heeding it are restarted.
+.IP drop-proxy
+Stop using the currently defined proxy. This setting may not be applied until
+any background processes heeding it are restarted.
+.IP read ID
+Read the feed entry with the given
+.I ID
+with a reader based on the MIME type specified in the feed. In the default
+configuration, HTML entries are shown with
+.BR links (1),
+images are shown with
+.BR cacaview (1),
+and audio files are played back with
+.BR aplay (1).
+Anything else is displayed with
+.BR less (1)
+which might be configured to use a better suited reader based on the entry's
+contents.
+.IP read-marked
+Same as
+.B read
+but use the currently active feed entry instead.
+
+.SH MACROS
+Macros are sequences of queries that are processed just like a series of
+queries passed on the command line.
+
+If the queries used in a macro require any parameters, then the parameters
+following the macro name on the command line are interspersed in the sequence
+of queries.
+
+Like queries, macros are also defiend in the database and you can write your
+own or modify the default set of macros by modifying the
+.B querymacro
+table.
+
+.IP next
+This macro will read the newest unread feed entry, mark it as read and then
+show the headline of the next newest and unread feed entry. This is equivalent
+to the queries
+.B mark-next read-marked mark-read mark-next title-marked
+.IP skip
+This will mark the newest unread feed entry as read and show the headline of
+the next newest and unread feed entry. This is equivalent to the queries
+.B mark-next mark-read mark-next title-marked
+
+.SH ENVIRONMENT
+.IP FEEDD_OPTIONS
+The options to use when launching the daemon. This is used if
+.I --daemon
+is not specified and the daemon needs to be launched. If neither specified
+then all background processing is enabled by default.
+.IP FEED_DATABASE
+The database file to use.
+.I --database
+overrides this, and if neither is specified then the built in default file name
+.B data.feed
+is used and the database is put in the current directory.
+
+.SH BUGS
+The reader can't cope with poorly authored syndication feeds all that well.
+The most notorious offenders seem to be feeds with colloding GUIDs and empty
+abstracts or contents. The current version of the programme is also unable to
+gather the contents of feeds that only contain links - that should include
+podcasts.
+
+The query and macro concepts, while powerful, make it pretty easy for you to
+screw things up if you aren't careful. You've been warned. When in doubt, try
+to erase the database file.
+
+If you unlink the database file while a background process is using it you'll
+have to kill that process manually. A simple SIGTERM should suffice.
+
+.SH AUTHOR
+Magnus Deininger <magnus@ef.gy>
+
+.SH "SEE ALSO"
+.BR feedd (1),
+.BR sqlite3 (1)
