@@ -141,8 +141,6 @@ namespace feed
 #if DAEMON == 1
         if (forkToBackground && !background)
         {
-            background = true;
-
             switch (fork())
             {
                 case 0:
@@ -180,12 +178,16 @@ namespace feed
                     signal (SIGHUP, SIG_IGN);
 #endif
                 }
+                    background = true;
+
                     break;
                 case -1:
                     /* no child process created */
                     throw exception ("could not spawn child process");
                     return -1;
                 default:
+                    background = true;
+
                     return 0;
             }
         }

@@ -161,6 +161,11 @@ namespace feed
                 return sqlite3_column_type (stmt, i) == SQLITE_NULL;
             }
 
+            int getColumnCount (void) const
+            {
+                return sqlite3_column_count(stmt);
+            }
+
             operator sqlite3_stmt * (void)
             {
                 return stmt;

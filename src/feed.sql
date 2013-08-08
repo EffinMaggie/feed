@@ -343,7 +343,7 @@ insert into command
 create table query
 (
     id integer primary key,
-    flag text null,
+    flag text null unique,
     accelerator text null,
     query text not null,
     interval float null,
@@ -391,10 +391,10 @@ select id
 insert into query
     (id, flag, interval, shell, query)
     values
-    ( 1, 'list',   null, 0, 'select eid, updated, title from vheadline order by updated asc'),
+    ( 1, 'list',   null, 0, 'select eid, round(updated,2), title from vheadline order by updated asc'),
     ( 2, 'clean',  0.05, 0, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
     ( 3, 'purge',  null, 0, 'delete from download where completiontime'),
-    ( 4, 'new',    null, 0, 'select eid, updated, title from vheadline where read = 0 order by updated asc')
+    ( 4, 'new',    null, 0, 'select eid, round(updated,2), title from vheadline where read = 0 order by updated asc')
 ;
 
 create view vcommand as

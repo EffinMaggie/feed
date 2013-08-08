@@ -31,6 +31,7 @@
 
 #include <cstdlib>
 #include <feed/daemon.h>
+#include <feed/query.h>
 
 int main (int argc, char**argv)
 {
@@ -38,6 +39,9 @@ int main (int argc, char**argv)
     const char *dbfile = DEFAULT_DATABASE;
     bool skipDaemon = false;
     bool initialiseDatabase = true;
+    bool doClient = true;
+
+    std::vector<std::string> cmd;
 
     for (int i = 0; (i < argc) && (argv[i]); i++)
     {
@@ -60,6 +64,10 @@ int main (int argc, char**argv)
         else if (s == "--skip-daemon")
         {
             skipDaemon = true;
+        }
+        else if (i > 0)
+        {
+            cmd.push_back (s);
         }
     }
 
@@ -100,6 +108,36 @@ int main (int argc, char**argv)
         {
             std::cerr << "ABORTED: " << e.string << "\n";
             return -1;
+        }
+    }
+
+    if (doClient)
+    {
+        feed::sqlite sql
+            (dbfile, feed::data::feed);
+        feed::configuration configuration
+            (sql);
+
+        if (cmd.size() == 0)
+        {
+            cmd.push_back ("list");
+        }
+
+        for (std::vector<std::string>::iterator it = cmd.begin();
+             it != cmd.end();
+             it++)
+        {
+            const std::string s(*it);
+
+            try
+            {
+                feed::query query (configuration, s);
+                query.run(it);
+            }
+            catch (feed::exception &e)
+            {
+                std::cerr << "INVALID QUERY: " << s << ": " << e.string << "\n";
+            }
         }
     }
 
