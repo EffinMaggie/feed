@@ -1,4 +1,7 @@
-TARGETS:=bin/feedd bin/feed include/feed/data-feed.h
+BINARIES:=bin/feedd bin/feed
+INCLUDES:=$(wildcard include/feed/*.h)
+INSTALLTARGETS:=$(BINARIES) $(INCLUDES) include/feed/data-feed.h
+TARGETS:=$(BINARIES) include/feed/data-feed.h
 DESTDIR:=/usr/local
 
 # programmes
@@ -7,6 +10,7 @@ INSTALL:=install
 CXX:=clang++
 CC:=clang
 PKGCONFIG:=pkg-config
+INSTALL:=install
 
 # paths, etc
 INCLUDES:=include
@@ -33,6 +37,14 @@ all: $(TARGETS)
 
 clean:
 	rm -f data.feed* $(TARGETS)
+
+install: $(addprefix $(DESTDIR)/,$(INSTALLTARGETS))
+
+uninstall:
+	rm -f $(addprefix $(DESTDIR)/,$(INSTALLTARGETS))
+
+$(DESTDIR)/%: %
+	$(INSTALL) -D $< $@
 
 data.feed: src/feed.sql
 	rm -f $@*
