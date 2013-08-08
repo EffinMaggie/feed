@@ -391,10 +391,11 @@ select id
 insert into query
     (id, flag, interval, shell, query)
     values
-    ( 1, 'list',   null, 0, 'select eid, round(updated,2), title from vheadline order by updated asc'),
+    ( 1, 'list',   null, 0, 'select ''['' || eid || '']'', round(updated,2), title from vheadline order by updated asc'),
     ( 2, 'clean',  0.05, 0, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
     ( 3, 'purge',  null, 0, 'delete from download where completiontime'),
-    ( 4, 'new',    null, 0, 'select eid, round(updated,2), title from vheadline where read = 0 order by updated asc')
+    ( 4, 'new',    null, 0, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where read = 0 order by updated asc'),
+    ( 5, 'quit',   null, 0, 'insert or ignore into clientcommand (cmid) values (2)')
 ;
 
 create view vcommand as
