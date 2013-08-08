@@ -64,7 +64,9 @@ namespace feed
         mtCanonicalURI    = 10,
         mtSourceFeed      = 11,
         mtAuthorName      = 12,
-        mtAuthorEmail     = 13
+        mtAuthorEmail     = 13,
+        mtRead            = 14,
+        mtMarked          = 15
     };
 
     enum commandtype

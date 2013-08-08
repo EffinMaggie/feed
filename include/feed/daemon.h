@@ -134,7 +134,7 @@ namespace feed
 
             if (running)
             {
-                return -2;
+                return 1;
             }
         }
 
@@ -188,7 +188,7 @@ namespace feed
                 default:
                     background = true;
 
-                    return 0;
+                    return 1;
             }
         }
 #endif

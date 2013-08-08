@@ -91,8 +91,6 @@ namespace feed
             (std::vector<std::string>::iterator &arg,
              const std::vector<std::string>::const_iterator &end)
         {
-            std::cout << flag << ":\n";
-
             sqlite::statement q(queryString, configuration.sql);
             const int columns = q.getColumnCount();
 

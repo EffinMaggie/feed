@@ -130,7 +130,9 @@ insert into meta
     (10, 'canonical URI'),
     (11, 'source feed'),
     (12, 'author name'),
-    (13, 'author email')
+    (13, 'author email'),
+    (14, 'marked as read'),
+    (15, 'marked')
 ;
 
 create table entrymeta
@@ -145,6 +147,22 @@ create table entrymeta
     foreign key (eid) references entry(id),
     foreign key (mid) references meta(id)
 );
+
+create trigger entrymetaFixMarker15 after insert on entrymeta
+for each row when new.mid = 15 begin
+    delete
+      from entrymeta
+     where id <> new.id
+       and mid = 15;
+end;
+
+create trigger entrymetaFixMarker14 after insert on entrymeta
+for each row when new.mid = 14 begin
+    delete
+      from entrymeta
+     where eid = new.eid
+       and mid = 15;
+end;
 
 create trigger entrymetaFixTime after insert on entrymeta
 for each row when new.mid in (4,5) and julianday(new.value) is not null and julianday(new.value) <> new.value begin
@@ -235,7 +253,8 @@ insert into status
     values
     ( 0, 'working'),
     ( 1, 'complete'),
-    ( 2, 'failure');
+    ( 2, 'failure')
+;
 
 create table download
 (
@@ -394,19 +413,23 @@ select id
 insert into query
     (flag, interval, query)
     values
-    ('list',   null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline order by updated asc'),
-    ('clean',  0.05, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
-    ('purge',  null, 'delete from download where completiontime'),
-    ('new',    null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where read = 0 order by updated asc'),
-    ('quit',   null, 'insert or ignore into clientcommand (cmid) values (2)'),
-    ('time',   null, 'select julianday(''now'')')
+    ('list',        null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline order by updated asc'),
+    ('clean',       0.05, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
+    ('purge',       null, 'delete from download where completiontime'),
+    ('new',         null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where read = 0 order by updated asc'),
+    ('quit',        null, 'insert or ignore into clientcommand (cmid) values (2)'),
+    ('time',        null, 'select julianday(''now'')'),
+    ('mark-next',   null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 15, 1 from vheadline where read = 0 order by updated desc limit 1'),
+    ('mark-read',   null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 14, 1 from entrymeta where mid = 15 limit 1'),
+    ('drop-proxy',  null, 'delete from options where otid = 0')
 ;
 
 insert into query
     (flag, parameters, query)
     values
     ('add',         1, 'insert into feed (source) values (?1)'),
-    ('remove',      1, 'delete from feed where source = ?1')
+    ('remove',      1, 'delete from feed where source = ?1'),
+    ('use-proxy',   1, 'insert or replace into options (otid, value) values (0, ?1)')
 ;
 
 create table viewer
@@ -450,7 +473,28 @@ select eid,
 insert into query
     (flag, shell, parameters, query)
     values
-    ('read',   1, 1, 'select command, data from ventryviewer where eid = ?1 limit 1')
+    ('read',        1, 1, 'select command, data from ventryviewer where eid = ?1 limit 1'),
+    ('read-marked', 1, 0, 'select command, data from ventryviewer, entrymeta where ventryviewer.eid = entrymeta.eid and mid = 15 and value = 1')
+;
+
+create table querymacro
+(
+    id integer not null primary key,
+    line integer not null default 5,
+    macro text not null,
+    flag text not null,
+    help text null,
+
+    foreign key (macro) references query(flag),
+    foreign key (flag) references query(flag)
+);
+
+insert into querymacro
+    (line, macro, flag)
+    values
+    (   1, 'next', 'mark-next'),
+    (   2, 'next', 'read-marked'),
+    (   3, 'next', 'mark-read')
 ;
 
 create view vcommand as
@@ -487,18 +531,10 @@ select entry.id as eid,
        coalesce((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 1), 'no title') as title,
        coalesce(julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 4)),
                 julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5))) as updated,
-       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5) as published
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5) as published,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 14) is not null as read
   from entry
 ;
-
-create table headline
-(
-    id integer not null primary key,
-    eid integer not null,
-    xid integer,
-    cid text,
-    title text
-);
 
 create table instance
 (

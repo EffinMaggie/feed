@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <feed/daemon.h>
 #include <feed/query.h>
+#include <feed/macro.h>
 
 int main (int argc, char**argv)
 {
@@ -102,7 +103,7 @@ int main (int argc, char**argv)
 
         try
         {
-            feed::processDaemon (std::string(opts) + "D", dbfile, background);
+            doClient = (feed::processDaemon (std::string(opts) + "D", dbfile, background) == 1);
         }
         catch (feed::exception &e)
         {
@@ -128,15 +129,29 @@ int main (int argc, char**argv)
              it++)
         {
             const std::string s(*it);
+            std::string ex;
 
             try
             {
                 feed::query query (configuration, s);
                 query.run(it, cmd.end());
+                continue;
             }
             catch (feed::exception &e)
             {
-                std::cerr << "INVALID QUERY: " << s << ": " << e.string << "\n";
+                ex = e.string;
+            }
+
+            try
+            {
+                feed::macro macro (configuration, s);
+                macro.run(it, cmd.end());
+                continue;
+            }
+            catch (feed::exception &e)
+            {
+                std::cerr << "INVALID QUERY: " << s << ": " << ex << "\n";
+                std::cerr << "INVALID MACRO: " << s << ": " << e.string << "\n";
             }
         }
     }
