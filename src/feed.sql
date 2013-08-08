@@ -426,47 +426,6 @@ select 5 as priority,
   from vquery
  where nextupdate <= julianday('now');
 
-create table log
-(
-    cmid integer null,
-    fid integer null,
-    sid integer null,
-    qid integer null,
-    did integer null,
-    eventtime float not null,
-    priority integer not null,
-    message text not null,
-
-    foreign key (cmid) references command(id),
-    foreign key (fid) references feed(id),
-    foreign key (sid) references service(id),
-    foreign key (qid) references query(id),
-    foreign key (did) references download(id)
-);
-
-create view vlog as
-select cmid,
-       fid,
-       sid,
-       qid,
-       did,
-       eventtime,
-       priority,
-       message
-  from log;
-
-create trigger vlogInsert instead of insert on vlog
-for each row
-begin
-  insert into log
-      (cmid, fid, sid, qid, did, eventtime, priority, message)
-      values
-      (new.cmid, new.fid, new.sid, new.qid, new.did,
-       coalesce(new.eventtime, julianday('now')),
-       coalesce(new.priority, 5),
-       new.message);
-end;
-
 create view vheadline as
 select entry.id as eid,
        entry.xid as xid,
