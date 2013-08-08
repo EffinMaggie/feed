@@ -128,7 +128,9 @@ insert into meta
     ( 8, 'content MIME type'),
     ( 9, 'content encoding'),
     (10, 'canonical URI'),
-    (11, 'source feed')
+    (11, 'source feed'),
+    (12, 'author name'),
+    (13, 'author email')
 ;
 
 create table entrymeta
@@ -350,6 +352,7 @@ create table query
     updated float null,
     parameters integer not null default 0,
     shell integer null,
+    help text null,
 
     check (flag is not null or accelerator is not null)
 );
@@ -400,9 +403,54 @@ insert into query
 ;
 
 insert into query
+    (flag, parameters, query)
+    values
+    ('add',         1, 'insert into feed (source) values (?1)'),
+    ('remove',      1, 'delete from feed where source = ?1')
+;
+
+create table viewer
+(
+    id integer not null primary key,
+    mime text not null,
+    command text not null,
+    priority integer not null default 10
+);
+
+insert into viewer
+    (mime, command, priority)
+    values
+    ('image/%', 'cacaview ${filename}',           40),
+    ('audio/%', 'aplay ${filename}',              40),
+    ('%html%',  'links -force-html ${filename}',  50),
+    ('%',       'less ${filename}',              100)
+;
+
+create view ventrydata as
+select id as eid,
+       coalesce((select value from entrymeta where eid = entry.id and mid = 7),
+                (select value from entrymeta where eid = entry.id and mid = 6),
+                (select value from entrymeta where eid = entry.id and mid = 1),
+                'no content') as data,
+       coalesce((select value from entrymeta where eid = entry.id and mid = 8
+                                               and exists (select eid from entrymeta where eid = entry.id and mid = 7)),
+                'text/plain') as mime
+  from entry;
+
+create view ventryviewer as
+select eid,
+       data,
+       ventrydata.mime,
+       command
+  from ventrydata,
+       viewer
+ where ventrydata.mime like viewer.mime
+ order by eid, priority;
+
+insert into query
     (flag, shell, parameters, query)
     values
-    ('read',   1, 1, 'select ''less ${filename}'', value from entrymeta where eid = cast(?1 as integer) and mid = 7 limit 1')
+    ('read',   1, 1, 'select command, data from ventryviewer where eid = ?1 limit 1')
 ;
 
 create view vcommand as

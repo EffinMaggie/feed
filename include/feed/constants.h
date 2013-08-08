@@ -62,7 +62,9 @@ namespace feed
         mtContentMIME     = 8,
         mtContentEncoding = 9,
         mtCanonicalURI    = 10,
-        mtSourceFeed      = 11
+        mtSourceFeed      = 11,
+        mtAuthorName      = 12,
+        mtAuthorEmail     = 13
     };
 
     enum commandtype

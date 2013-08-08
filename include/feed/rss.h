@@ -150,6 +150,11 @@ namespace feed
                     {
                         entry.addMeta (mtContent, value);
                     }
+                    else if ((value = parser.evaluate("description")) != "")
+                    {
+                        entry.addMeta (mtContent, value);
+                        entry.addMeta (mtContentMIME, "text/html");
+                    }
 
                     std::cerr << "r";
                 }
