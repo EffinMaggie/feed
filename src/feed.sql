@@ -413,15 +413,16 @@ select id
 insert into query
     (flag, interval, query)
     values
-    ('list',        null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline order by updated asc'),
-    ('clean',       0.05, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
-    ('purge',       null, 'delete from download where completiontime'),
-    ('new',         null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where read = 0 order by updated asc'),
-    ('quit',        null, 'insert or ignore into clientcommand (cmid) values (2)'),
-    ('time',        null, 'select julianday(''now'')'),
-    ('mark-next',   null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 15, 1 from vheadline where read = 0 order by updated desc limit 1'),
-    ('mark-read',   null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 14, 1 from entrymeta where mid = 15 limit 1'),
-    ('drop-proxy',  null, 'delete from options where otid = 0')
+    ('list',         null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline order by updated asc'),
+    ('clean',        0.05, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
+    ('purge',        null, 'delete from download where completiontime'),
+    ('new',          null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where read = 0 order by updated asc'),
+    ('quit',         null, 'insert or ignore into clientcommand (cmid) values (2)'),
+    ('time',         null, 'select julianday(''now'')'),
+    ('mark-next',    null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 15, 1 from vheadline where read = 0 order by updated desc limit 1'),
+    ('mark-read',    null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 14, 1 from entrymeta where mid = 15 limit 1'),
+    ('drop-proxy',   null, 'delete from options where otid = 0'),
+    ('title-marked', null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where marked order by updated desc limit 1')
 ;
 
 insert into query
@@ -494,7 +495,14 @@ insert into querymacro
     values
     (   1, 'next', 'mark-next'),
     (   2, 'next', 'read-marked'),
-    (   3, 'next', 'mark-read')
+    (   3, 'next', 'mark-read'),
+    (   4, 'next', 'mark-next'),
+    (   5, 'next', 'title-marked'),
+
+    (   1, 'skip', 'mark-next'),
+    (   2, 'skip', 'mark-read'),
+    (   3, 'skip', 'mark-next'),
+    (   4, 'skip', 'title-marked')
 ;
 
 create view vcommand as
@@ -532,7 +540,8 @@ select entry.id as eid,
        coalesce(julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 4)),
                 julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5))) as updated,
        (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5) as published,
-       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 14) is not null as read
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 14) is not null as read,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 15) is not null as marked
   from entry
 ;
 
