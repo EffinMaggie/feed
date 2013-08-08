@@ -391,10 +391,10 @@ select id
 insert into query
     (id, flag, interval, shell, query)
     values
-    ( 1, 'list',  null, 0, 'select * from vheadline order by updated asc'),
-    ( 2, 'clean', 0.05, 0, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
-    ( 3, 'purge', null, 0, 'delete from download where completiontime'),
-    ( 4, 'new',   null, 0, 'select * from vheadline where read = 0 order by updated asc')
+    ( 1, 'list',   null, 0, 'select eid, updated, title from vheadline order by updated asc'),
+    ( 2, 'clean',  0.05, 0, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
+    ( 3, 'purge',  null, 0, 'delete from download where completiontime'),
+    ( 4, 'new',    null, 0, 'select eid, updated, title from vheadline where read = 0 order by updated asc')
 ;
 
 create view vcommand as
@@ -470,8 +470,8 @@ select entry.id as eid,
        entry.xid as xid,
        (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 0) as cid,
        coalesce((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 1), 'no title') as title,
-       coalesce((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 4),
-                (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5)) as updated,
+       coalesce(julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 4)),
+                julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5))) as updated,
        (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5) as published
   from entry
 ;
@@ -483,6 +483,12 @@ create table headline
     xid integer,
     cid text,
     title text
+);
+
+create table instance
+(
+    id integer not null primary key,
+    pid integer not null unique
 );
 
 -- options

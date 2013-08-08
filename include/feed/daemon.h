@@ -31,6 +31,9 @@
 
 #include <sqlite3.h>
 #include <string>
+#include <unistd.h>
+#include <signal.h>
+#include <errno.h>
 #include <feed/atom.h>
 #include <feed/rss.h>
 #include <feed/download.h>
@@ -54,13 +57,15 @@
 
 #if DAEMON == 1
 #include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #endif
 
 namespace feed
 {
     static int processDaemon (const std::string &opts, const std::string &dbfile, bool &background)
     {
-        char *errmsg = 0;
         bool processAtom = false;
         bool processRSS = false;
         bool processDownload = false;
@@ -68,9 +73,9 @@ namespace feed
         bool processDNS = false;
         bool processXHTML = false;
         bool processHTML = false;
+        bool allowSecondary = false;
         bool forkToBackground = false;
-
-        sqlite sql(dbfile, data::feed);
+        bool recordInstance = true;
 
         for (int i = 0; i < opts.size(); i++)
         {
@@ -84,15 +89,116 @@ namespace feed
                 case 'N': processDNS = true; break;
                 case 'X': processXHTML = true; break;
                 case 'H': processHTML = true; break;
+                case 'S': allowSecondary = true; break;
+            }
+        }
+
+        if (!allowSecondary)
+        {
+            bool running = false;
+
+            sqlite sql(dbfile, data::feed);
+
+            sqlite::statement stmt ("select pid from instance", sql);
+            while (stmt.step () && stmt.row)
+            {
+                int pid;
+                if (stmt.get (0, pid))
+                {
+                    if (kill (pid, 0))
+                    {
+                        switch (errno)
+                        {
+                            /* pid is still active, but as different user */
+                            case EPERM:
+                                running = true;
+                                break;
+                            /* pid is no longer active */
+                            case ESRCH:
+                            {
+                                stmt.reset ();
+                                sqlite::statement removePID
+                                    ("delete from instance where pid = ?1", sql);
+                                removePID.bind (1, pid);
+                                removePID.step ();
+                            }
+                            default: break;
+                        }
+                    }
+                    else
+                    {
+                        running = true;
+                    }
+                }
+            }
+
+            if (running)
+            {
+                return -2;
             }
         }
 
 #if DAEMON == 1
-        if (forkToBackground && !background && (daemon(1, 0) == 0))
+        if (forkToBackground && !background)
         {
             background = true;
+
+            switch (fork())
+            {
+                case 0:
+                    /* in child process */
+                {
+                    int fd;
+#if defined(TIOCNOTTY)
+                    fd = open("/dev/tty", O_RDWR);
+                    if (fd >= 0) {
+                        ioctl(fd, TIOCNOTTY, 0);
+                        close(fd);
+                    }
+#endif
+
+                    fd = open ("/dev/null", O_RDWR);
+                    if (fd >= 0)
+                    {
+                        dup2 (fd, 0);
+                        dup2 (fd, 1);
+                        dup2 (fd, 2);
+                    }
+
+                    chdir ("/");
+                    setsid ();
+#if defined(SIGTTOU)
+                    signal (SIGTTOU, SIG_IGN);
+#endif
+#if defined(SIGTTIN)
+                    signal (SIGTTIN, SIG_IGN);
+#endif
+#if defined(SIGTSTP)
+                    signal (SIGTSTP, SIG_IGN);
+#endif
+#if defined(SIGHUP)
+                    signal (SIGHUP, SIG_IGN);
+#endif
+                }
+                    break;
+                case -1:
+                    /* no child process created */
+                    throw exception ("could not spawn child process");
+                    return -1;
+                default:
+                    return 0;
+            }
         }
 #endif
+
+        sqlite sql(dbfile, data::feed);
+
+        if (recordInstance)
+        {
+            sqlite::statement stmt ("insert or ignore into instance (pid) values (?1)", sql);
+            stmt.bind (1, getpid());
+            stmt.step ();
+        }
 
         configuration configuration(sql);
         download download(configuration, processDownload);
@@ -242,6 +348,11 @@ namespace feed
             configuration.rollbackTransaction();
             throw exception("current transaction rolled back");
         }
+
+        sqlite::statement removePID
+            ("delete from instance where pid = ?1", sql);
+        removePID.bind (1, getpid());
+        removePID.step ();
 
         return 0;
     }

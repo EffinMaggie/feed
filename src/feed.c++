@@ -27,6 +27,7 @@
 */
 
 #define DEFAULT_OPTIONS "BWARDNXH"
+#define DAEMON 1
 
 #include <cstdlib>
 #include <feed/daemon.h>
@@ -35,15 +36,31 @@ int main (int argc, char**argv)
 {
     const char *opts = DEFAULT_OPTIONS;
     const char *dbfile = DEFAULT_DATABASE;
+    bool skipDaemon = false;
+    bool initialiseDatabase = true;
 
-    if (argc > 1)
+    for (int i = 0; (i < argc) && (argv[i]); i++)
     {
-        opts = argv[1];
-    }
+        std::string s = argv[i];
 
-    if (argc > 2)
-    {
-        dbfile = argv[2];
+        if (s == "--daemon")
+        {
+            if (i++, (i < argc) && (argv[i]))
+            {
+                opts = argv[i];
+            }
+        }
+        else if (s == "--database")
+        {
+            if (i++, (i < argc) && (argv[i]))
+            {
+                dbfile = argv[i];
+            }
+        }
+        else if (s == "--skip-daemon")
+        {
+            skipDaemon = true;
+        }
     }
 
     if (opts == DEFAULT_OPTIONS)
@@ -58,16 +75,33 @@ int main (int argc, char**argv)
         dbfile = envdb ? envdb : dbfile;
     }
 
-    bool background = false;
-
-    try
+    if (initialiseDatabase)
     {
-        return feed::processDaemon (opts, dbfile, background);
-    }
-    catch (std::string &s)
-    {
-        std::cerr << "ABORTED: " << s << "\n";
+        feed::sqlite (dbfile, feed::data::feed);
     }
 
-    return -1;
+    dbfile = realpath (dbfile, 0);
+
+    if (dbfile == 0)
+    {
+        std::cerr << "ABORTED: call to realpath(dbfile) failed\n";
+        return -3;
+    }
+
+    if (!skipDaemon)
+    {
+        bool background = false;
+
+        try
+        {
+            feed::processDaemon (std::string(opts) + "D", dbfile, background);
+        }
+        catch (feed::exception &e)
+        {
+            std::cerr << "ABORTED: " << e.string << "\n";
+            return -1;
+        }
+    }
+
+    return 0;
 }
