@@ -422,7 +422,8 @@ insert into query
     ('mark-next',    null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 15, 1 from vheadline where read = 0 order by updated desc limit 1'),
     ('mark-read',    null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 14, 1 from entrymeta where mid = 15 limit 1'),
     ('drop-proxy',   null, 'delete from options where otid = 0'),
-    ('title-marked', null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where marked order by updated desc limit 1')
+    ('title-marked', null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where marked order by updated desc limit 1'),
+    ('all-read',     null, 'insert or ignore into entrymeta (eid, mid, value) select id, 14, 1 from entry')
 ;
 
 insert into query
