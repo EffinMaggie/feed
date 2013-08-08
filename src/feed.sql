@@ -399,6 +399,12 @@ insert into query
     ('time',   null, 'select julianday(''now'')')
 ;
 
+insert into query
+    (flag, shell, parameters, query)
+    values
+    ('read',   1, 1, 'select ''less ${filename}'', value from entrymeta where eid = cast(?1 as integer) and mid = 7 limit 1')
+;
+
 create view vcommand as
 select 5 as priority,
        cmid,

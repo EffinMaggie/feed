@@ -132,7 +132,7 @@ int main (int argc, char**argv)
             try
             {
                 feed::query query (configuration, s);
-                query.run(it);
+                query.run(it, cmd.end());
             }
             catch (feed::exception &e)
             {
