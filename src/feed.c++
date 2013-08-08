@@ -121,7 +121,7 @@ int main (int argc, char**argv)
 
         if (cmd.size() == 0)
         {
-            cmd.push_back ("list");
+            cmd.push_back ("new");
         }
 
         for (std::vector<std::string>::iterator it = cmd.begin();
