@@ -568,8 +568,6 @@ insert into feed
     (source)
     values
     ('http://ef.gy/'),
-    ('http://xkcd.com/'),
-    ('http://what-if.xkcd.com/'),
     ('http://thedailywtf.com/'),
-    ('http://git.becquerel.org/?p=jyujin/feed.git;a=atom')
+    ('http://slashdot.org/')
 ;
