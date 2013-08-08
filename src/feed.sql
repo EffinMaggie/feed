@@ -414,6 +414,7 @@ insert into query
     (flag, interval, query)
     values
     ('list',         null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline order by updated asc'),
+    ('list-feeds',   null, 'select ''['' || id || '']'', source from feed'),
     ('clean',        0.05, 'delete from download where id < (select max (id) from download as d2 where download.uri = d2.uri and download.payload is d2.payload)'),
     ('purge',        null, 'delete from download where completiontime'),
     ('new',          null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where read = 0 order by updated asc'),
