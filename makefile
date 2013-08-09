@@ -3,7 +3,8 @@ INCLUDES:=$(wildcard include/feed/*.h)
 MANPAGES:=$(addprefix share/man/man1/,$(notdir $(wildcard src/*.1)))
 INSTALLTARGETS:=$(BINARIES) $(INCLUDES) $(MANPAGES) include/feed/data-feed.h
 TARGETS:=$(BINARIES) include/feed/data-feed.h
-DESTDIR:=/usr/local
+ROOT:=/
+DESTDIR:=$(ROOT)usr/local
 
 # programmes
 SQLITE3:=sqlite3
@@ -39,15 +40,18 @@ all: $(TARGETS)
 clean:
 	rm -f data.feed* $(TARGETS)
 
-install: $(addprefix $(DESTDIR)/,$(INSTALLTARGETS))
+install: $(addprefix $(DESTDIR)/,$(INSTALLTARGETS)) $(ROOT)etc/profile.d/feed.sh
 
 uninstall:
-	rm -f $(addprefix $(DESTDIR)/,$(INSTALLTARGETS))
+	rm -f $(addprefix $(DESTDIR)/,$(INSTALLTARGETS)) $(ROOT)etc/profile.d/feed.sh
 
 $(DESTDIR)/%: %
 	$(INSTALL) -D $< $@
 
 $(DESTDIR)/share/man/man1/%.1: src/%.1
+	$(INSTALL) -D $< $@
+
+$(ROOT)etc/profile.d/%: src/%
 	$(INSTALL) -D $< $@
 
 data.feed: src/feed.sql
