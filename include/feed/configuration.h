@@ -107,7 +107,7 @@ namespace feed
 
             selectConfiguration.bind (1, otc);
 
-            if (selectConfiguration.step())
+            if (selectConfiguration.step() && selectConfiguration.row)
             {
                 selectConfiguration.get (0, output);
             }
