@@ -559,10 +559,10 @@ insert or replace into option
     (otid, value)
     values
     -- CURL proxy settings
-    (   0, 'socks5h://127.0.0.1:12050'),
+    -- (   0, 'socks5h://127.0.0.1:12050'),
 
     -- The User Agent string to send
-    (   1, 'FEED/0')
+    (   1, 'FEED/1')
 ;
 
 insert into feed
