@@ -33,17 +33,17 @@ int main (int argc, char**argv)
 {
     const char *opts = (argc > 1 ? argv[1] : DEFAULT_OPTIONS);
     const char *dbfile = (argc > 2 ? argv[2] : DEFAULT_DATABASE);
+    const char *envopts = std::getenv ("FEEDD_OPTIONS");
+    const char *envdb = std::getenv ("FEED_DATABASE");
 
-    if (opts == DEFAULT_OPTIONS)
+    if (envopts && (argc <= 1))
     {
-        const char *envopts = std::getenv ("FEEDD_OPTIONS");
-        dbfile = envopts ? envopts : dbfile;
+        opts = envopts;
     }
 
-    if (dbfile == DEFAULT_DATABASE)
+    if (envdb && (argc <= 2))
     {
-        const char *envdb = std::getenv ("FEED_DATABASE");
-        dbfile = envdb ? envdb : dbfile;
+        dbfile = envdb;
     }
 
     bool background = false;

@@ -36,13 +36,28 @@
 
 int main (int argc, char**argv)
 {
-    const char *opts = DEFAULT_OPTIONS;
+    const char *opts   = DEFAULT_OPTIONS;
     const char *dbfile = DEFAULT_DATABASE;
     bool skipDaemon = false;
     bool initialiseDatabase = true;
     bool doClient = true;
+    const char *envopts = std::getenv ("FEEDD_OPTIONS");
+    const char *envdb = std::getenv ("FEED_DATABASE");
 
     std::vector<std::string> cmd;
+
+    std::cerr << envopts;
+    std::cerr << envdb;
+
+    if (envopts)
+    {
+        opts = envopts;
+    }
+
+    if (envdb)
+    {
+        dbfile = envdb;
+    }
 
     for (int i = 0; (i < argc) && (argv[i]); i++)
     {
@@ -70,18 +85,6 @@ int main (int argc, char**argv)
         {
             cmd.push_back (s);
         }
-    }
-
-    if (opts == DEFAULT_OPTIONS)
-    {
-        const char *envopts = std::getenv ("FEEDD_OPTIONS");
-        dbfile = envopts ? envopts : dbfile;
-    }
-
-    if (dbfile == DEFAULT_DATABASE)
-    {
-        const char *envdb = std::getenv ("FEED_DATABASE");
-        dbfile = envdb ? envdb : dbfile;
     }
 
     if (initialiseDatabase)
