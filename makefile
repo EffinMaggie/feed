@@ -3,8 +3,9 @@ INCLUDES:=$(wildcard include/feed/*.h)
 MANPAGES:=$(addprefix share/man/man1/,$(notdir $(wildcard src/*.1)))
 INSTALLTARGETS:=$(BINARIES) $(INCLUDES) $(MANPAGES) include/feed/data-feed.h
 TARGETS:=$(BINARIES) include/feed/data-feed.h
-ROOT:=
-DESTDIR:=$(ROOT)/usr/local
+DESTDIR:=
+PREFIX:=/usr/local
+DEST:=$(DESTDIR)$(PREFIX)
 VERSION:=1
 
 # programmes
@@ -41,24 +42,27 @@ all: $(TARGETS)
 clean:
 	rm -f data.feed* $(TARGETS)
 
-install: $(addprefix $(DESTDIR)/,$(INSTALLTARGETS)) $(ROOT)/etc/profile.d/feed.sh
+install: $(addprefix $(DEST)/,$(INSTALLTARGETS)) $(DESTDIR)/etc/profile.d/feed.sh
 
 uninstall:
-	rm -f $(addprefix $(DESTDIR)/,$(INSTALLTARGETS)) $(ROOT)/etc/profile.d/feed.sh
+	rm -f $(addprefix $(DEST)/,$(INSTALLTARGETS)) $(DESTDIR)/etc/profile.d/feed.sh
 
 archive: ../feed-$(VERSION).tar.gz
 archive-debian: ../feed_$(VERSION).orig.tar.gz
 
+package-debian: archive-debian
+	debuild -us -uc
+
 ../feed%.tar.gz:
 	git archive --format=tar --prefix=feed-$(VERSION)/ HEAD | gzip -9 >$@
 
-$(DESTDIR)/%: %
+$(DEST)/%: %
 	$(INSTALL) -D $< $@
 
-$(DESTDIR)/share/man/man1/%.1: src/%.1
+$(DEST)/share/man/man1/%.1: src/%.1
 	$(INSTALL) -D $< $@
 
-$(ROOT)/etc/profile.d/%: src/%
+$(DESTDIR)/etc/profile.d/%: src/%
 	$(INSTALL) -D $< $@
 
 data.feed: src/feed.sql
