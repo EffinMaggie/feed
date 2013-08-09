@@ -565,10 +565,10 @@ insert or replace into option
     (   1, 'FEED/1')
 ;
 
-insert into feed
-    (source)
-    values
-    ('http://ef.gy/'),
-    ('http://thedailywtf.com/'),
-    ('http://slashdot.org/')
-;
+--insert into feed
+--    (source)
+--    values
+--    ('http://ef.gy/'),
+--    ('http://thedailywtf.com/'),
+--    ('http://slashdot.org/')
+--;
