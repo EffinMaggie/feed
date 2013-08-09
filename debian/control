@@ -1,0 +1,12 @@
+Source: feed
+Maintainer: Magnus Deininger <magnus@ef.gy>
+Section: misc
+Priority: optional
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 8)
+
+Package: feed
+Architecture: any
+Depends: ${misc:Depends}
+Description: read syndication feeds
+ feed is a command line reader for Atom and RSS feeds.
