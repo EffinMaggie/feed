@@ -5,6 +5,7 @@ INSTALLTARGETS:=$(BINARIES) $(INCLUDES) $(MANPAGES) include/feed/data-feed.h
 TARGETS:=$(BINARIES) include/feed/data-feed.h
 ROOT:=
 DESTDIR:=$(ROOT)/usr/local
+VERSION:=1
 
 # programmes
 SQLITE3:=sqlite3
@@ -44,6 +45,12 @@ install: $(addprefix $(DESTDIR)/,$(INSTALLTARGETS)) $(ROOT)/etc/profile.d/feed.s
 
 uninstall:
 	rm -f $(addprefix $(DESTDIR)/,$(INSTALLTARGETS)) $(ROOT)/etc/profile.d/feed.sh
+
+archive: ../feed-$(VERSION).tar.gz
+archive-debian: ../feed_$(VERSION).orig.tar.gz
+
+../feed%.tar.gz:
+	git archive --format=tar --prefix=feed-$(VERSION)/ HEAD | gzip -9 >$@
 
 $(DESTDIR)/%: %
 	$(INSTALL) -D $< $@
