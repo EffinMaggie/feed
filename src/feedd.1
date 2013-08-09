@@ -1,0 +1,93 @@
+.TH FEEDD 1 "AUGUST 2013" FEED "Application Manuals"
+
+.SH NAME
+feedd \- download and parse syndication feeds
+
+.SH SYNOPSIS
+.B feedd [
+.I daemon-parameters
+.B [
+.I database-file
+.B ] ]
+
+.SH DESCRIPTION
+.B feedd
+is the background counterpart of
+.BR feed (1)
+and will download and manage syndication feeds.
+
+You don't typically have to run the daemon yourself as it's started alongside
+the main programme.
+
+.SH OPTIONS
+.IP daemon-parameters
+Use the specified
+.I daemon-parameters
+instead of the built in defaults. These options are a single string, each
+enabling one of the features of the daemon. Anything the daemon doesn't know
+about is simply ignored.
+.IP database-file
+Use
+.I database-file
+instead of the default as set in the environment. Unlike
+.BR feed (1)
+you should always use an absolute path here if you intend to spawn the daemon
+into the background with the
+.B B
+option.
+
+.SH DAEMON-PARAMETERS
+The daemon parameters are specified as a single string where each of the
+characters enables one of the features of the daemon. Any feature not enabled
+is disabled by default. The available features are:
+.IP A
+Enable the Atom parser.
+.IP B
+Fork to the background.
+.IP D
+Enable the downoader.
+.IP H
+Enable the HTML parser.
+.IP N
+Enable the DNS resolver (not used for the downloader).
+.IP R
+Enable the RSS parser.
+.IP S
+Allow the daemon to run, even if there is already another daemon running on the
+same database. This is useful when you'd like to have different processes
+handle different parts of the work.
+.IP W
+Enablet he WHOIS client.
+.IP X
+Enable the XHTML parser.
+
+.SH ENVIRONMENT
+.IP FEEDD_OPTIONS
+The options to use when launching the daemon. This is used if the first
+parameter is not specified. If neither is specified then all background
+processing is enabled by default.
+.IP FEED_DATABASE
+The database file to use. The second parameter overrides this, and if neither
+is specified then the built in default file name
+.B data.feed
+is used and the database is put in the current directory.
+
+.SH BUGS
+The reader can't cope with poorly authored syndication feeds all that well.
+The most notorious offenders seem to be feeds with colloding GUIDs and empty
+abstracts or contents. The current version of the programme is also unable to
+gather the contents of feeds that only contain links - that should include
+podcasts.
+
+The query and macro concepts, while powerful, make it pretty easy for you to
+screw things up if you aren't careful. You've been warned. When in doubt, try
+to erase the database file.
+
+If you unlink the database file while a background process is using it you'll
+have to kill that process manually. A simple SIGTERM should suffice.
+
+.SH AUTHOR
+Magnus Deininger <magnus@ef.gy>
+
+.SH "SEE ALSO"
+.BR feed (1)

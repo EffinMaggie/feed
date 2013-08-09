@@ -27,7 +27,7 @@ automatically.
 Launch the background process if it's not running, create a suitable database
 if it doesn't exist and show any unread feed entries.
 .IP "$ feed add http://ef.gy/"
-Sign up to any feeds accessible defined in the headers of the web page at
+Sign up to any feeds defined in the headers of the web page at
 .I http://ef.gy/
 .IP "$ feed next"
 Read the newest unread feed entry - or do nothing if everything's been read.
@@ -48,7 +48,7 @@ instead of the built in defaults. See
 for the format of these parameters.
 .B feed
 will always add the
-.B D
+.B B
 flag to launch the daemon in the background, regardless of what other options
 you pass with this parameter.
 .IP "--database database-file"
@@ -111,7 +111,7 @@ Mark the currently active feed entry as read.
 Show the headline for the currently active feed entry.
 .IP all-read
 Mark all feed entries as read.
-.IP add URI
+.IP "add URI"
 Add a feed specified by
 .I URI
 - this will automatically retrieve the referenced resource periodically. If
@@ -119,19 +119,22 @@ the resource is an Atom or RSS feed, then all entries will automatically be
 added as new, unread feed entries. If it's a HTML or XHTML file, then
 .B feed
 will try to parse it and add any feeds specified in the file's metadata.
-.IP remove URI
+.IP "remove URI"
 Remove the feed specified by
 .I URI
 but keep any entries that have been processed.
-.IP use-proxy URI
+.IP "use-proxy URI"
 Use the proxy specified by
 .I URI
 when downloading data. This setting may not be applied until any background
-processes heeding it are restarted.
+processes heeding it are restarted. The format for this proxy URI is the same
+format employed by
+.BR curl (1)
+for its proxy.
 .IP drop-proxy
 Stop using the currently defined proxy. This setting may not be applied until
 any background processes heeding it are restarted.
-.IP read ID
+.IP "read ID"
 Read the feed entry with the given
 .I ID
 with a reader based on the MIME type specified in the feed. In the default
@@ -177,7 +180,7 @@ the next newest and unread feed entry. This is equivalent to the queries
 .IP FEEDD_OPTIONS
 The options to use when launching the daemon. This is used if
 .I --daemon
-is not specified and the daemon needs to be launched. If neither specified
+is not specified and the daemon needs to be launched. If neither is specified
 then all background processing is enabled by default.
 .IP FEED_DATABASE
 The database file to use.

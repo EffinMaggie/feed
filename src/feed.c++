@@ -103,7 +103,7 @@ int main (int argc, char**argv)
 
         try
         {
-            doClient = (feed::processDaemon (std::string(opts) + "D", dbfile, background) == 1);
+            doClient = (feed::processDaemon (std::string(opts) + "B", dbfile, background) == 1);
         }
         catch (feed::exception &e)
         {
