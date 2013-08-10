@@ -1,0 +1,53 @@
+###- QUICK AND DIRTY: COMPILATION AND INSTALLATION -############################
+
+To build the programme, you will need to have libboost-regex, libcurl, libxml2
+and sqlire3 installed, along with their development files (headers) if your
+distribution has separate packages for development files.
+The default compiler in the makefile (and the only one tested) is CLANG++, so
+it'D be a good idea to install that as well.
+
+As a regular user, run 'make' in a shell, like this:
+
+    $ make
+
+If that compiles, you can now run 'make install' as root, like this:
+
+    # make PREFIX=/usr install
+
+The installation procedure includes a file with environment variables at
+/etc/profile.d/feed.sh - you should source your .profile or relog before using
+the programme.
+
+################################################################################
+
+###- DETAILS -##################################################################
+
+The instructions above should work in almost all cases.
+
+If you don't have CLANG++ installed on your machine, you could try to use g++
+instead. To do that, modify the makefile and replace clang++ with g++ where
+appropriate. Alternatively, you could set the environment variable CXX to g++.
+
+If you need debug symbols, then set the CXXFLAGS variable to -g before you
+compile.
+
+The installation includes a lot of header files in $(PREFIX)/include/feed -
+unlike most programmes, this is actually almost all of the programme's source
+code. If you'd like to write your own client to FEED's database, these headers
+should be all you need.
+
+################################################################################
+
+###- USAGE -####################################################################
+
+See the man page for details on how to use FEED:
+
+    $ man feed
+
+- OR -
+
+if you haven't installed the programme, then in the source directory run:
+
+    $ man src/feed.1
+
+################################################################################
