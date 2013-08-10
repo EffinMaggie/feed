@@ -6,3 +6,5 @@ include/feed/data-*.h
 include/sqlite3.h
 src/sqlite3.c
 src/*.h
+*shm
+*wal

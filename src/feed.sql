@@ -564,11 +564,3 @@ insert or replace into option
     -- The User Agent string to send
     (   1, 'FEED/1')
 ;
-
---insert into feed
---    (source)
---    values
---    ('http://ef.gy/'),
---    ('http://thedailywtf.com/'),
---    ('http://slashdot.org/')
---;

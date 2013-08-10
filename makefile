@@ -1,7 +1,8 @@
 BINARIES:=bin/feedd bin/feed
 INCLUDES:=$(wildcard include/feed/*.h)
 MANPAGES:=$(addprefix share/man/man1/,$(notdir $(wildcard src/*.1)))
-INSTALLTARGETS:=$(BINARIES) $(INCLUDES) $(MANPAGES) include/feed/data-feed.h
+DATAHEADERS:=include/feed/data-feed.h include/feed/data-update1to2.h
+INSTALLTARGETS:=$(BINARIES) $(INCLUDES) $(MANPAGES) $(DATAHEADERS)
 TARGETS:=$(BINARIES) include/feed/data-feed.h
 DESTDIR:=
 PREFIX:=/usr/local
@@ -79,7 +80,7 @@ bin/.volatile:
 	mkdir $(dir $@); true
 	touch $@
 
-bin/%: src/%.c++ bin/.volatile include/feed/data-feed.h sqlite3.o
+bin/%: src/%.c++ bin/.volatile $(DATAHEADERS) sqlite3.o
 	$(CXXR) $< $(LDFLAGS) $(PCLDFLAGS) -o $@
 
 sqlite3.o: src/sqlite3.c

@@ -30,10 +30,10 @@
 #define FEED_CONFIGURATION_H
 
 #include <feed/sql.h>
-#include <sqlite3.h>
+#include <feed/data-update1to2.h>
 
 #if !defined(FEED_SCHEMAVERSION)
-#define FEED_SCHEMAVERSION "1"
+#define FEED_SCHEMAVERSION "2"
 #endif
 
 namespace feed
@@ -50,6 +50,15 @@ namespace feed
               inTransaction(false)
         {
             updateConfiguration ();
+
+            if (schemaVersion == "1")
+            {
+                std::cerr << "updating database schema from version 1 to version 2\n";
+
+                sql.import (data::update1to2);
+
+                updateConfiguration ();
+            }
 
             if (schemaVersion != FEED_SCHEMAVERSION)
             {
