@@ -3,11 +3,11 @@ Maintainer: Magnus Deininger <magnus@ef.gy>
 Section: misc
 Priority: optional
 Standards-Version: 3.9.2
-Build-Depends: debhelper (>= 8), libboost-regex1.49-dev, libcurl4-openssl-dev, libxml2-dev, libsqlite3-dev, clang
+Build-Depends: debhelper (>= 8), libboost-regex1.49-dev, libcurl4-openssl-dev, libxml2-dev, clang, curl, unzip
 
 Package: feed
 Architecture: any
-Depends: libboost-regex1.49.0, libcurl3, libxml2, libsqlite3-0
+Depends: libboost-regex1.49.0, libcurl3, libxml2
 Recommends: links
 Description: read syndication feeds
  feed is a command line reader for Atom and RSS feeds.
