@@ -70,11 +70,6 @@ namespace feed
             {
                 throw exceptionCURL("curl_share_setopt(...,CURL_LOCK_DATA_DNS)");
             }
-
-            if (curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION) != CURLSHE_OK)
-            {
-                throw exceptionCURL("curl_share_setopt(...,CURL_LOCK_DATA_SSL_SESSION)");
-            }
         }
 
         ~download(void)
