@@ -52,7 +52,7 @@ namespace feed
         {
             if (sqlite3_open_v2(databaseFile.c_str(), &database, SQLITE_OPEN_READWRITE, 0) != SQLITE_OK)
             {
-                std::cerr << "database '" << databaseFile << "' couuld not be opened: creating with reference data\n";
+                std::cerr << "database '" << databaseFile << "' could not be opened: creating with reference data\n";
 
                 if (sqlite3_open(databaseFile.c_str(), &database) != SQLITE_OK)
                 {

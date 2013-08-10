@@ -89,10 +89,10 @@ int main (int argc, char**argv)
 
     if (initialiseDatabase)
     {
-        feed::sqlite (dbfile, feed::data::feed);
+        feed::sqlite sql (dbfile, feed::data::feed);
+        feed::configuration configuration (sql);
+        dbfile = realpath (dbfile, 0);
     }
-
-    dbfile = realpath (dbfile, 0);
 
     if (dbfile == 0)
     {
