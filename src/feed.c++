@@ -46,9 +46,6 @@ int main (int argc, char**argv)
 
     std::vector<std::string> cmd;
 
-    std::cerr << envopts;
-    std::cerr << envdb;
-
     if (envopts)
     {
         opts = envopts;
@@ -92,12 +89,12 @@ int main (int argc, char**argv)
         feed::sqlite sql (dbfile, feed::data::feed);
         feed::configuration configuration (sql);
         dbfile = realpath (dbfile, 0);
-    }
 
-    if (dbfile == 0)
-    {
-        std::cerr << "ABORTED: call to realpath(dbfile) failed\n";
-        return -3;
+        if (dbfile == 0)
+        {
+            std::cerr << "ABORTED: call to realpath(dbfile) failed\n";
+            return -3;
+        }
     }
 
     if (!skipDaemon)
