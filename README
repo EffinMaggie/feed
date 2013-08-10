@@ -1,7 +1,7 @@
 ###- QUICK AND DIRTY: COMPILATION AND INSTALLATION -############################
 
 To build the programme, you will need to have libboost-regex, libcurl, libxml2
-and sqlire3 installed, along with their development files (headers) if your
+and sqlite3 installed, along with their development files (headers) if your
 distribution has separate packages for development files.
 The default compiler in the makefile (and the only one tested) is CLANG++, so
 it'D be a good idea to install that as well.
