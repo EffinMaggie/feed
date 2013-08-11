@@ -79,6 +79,9 @@ data.feed: src/feed.sql
 	rm -f $@*
 	$(SQLITE3) $@ < $<
 
+reset:
+	$(SQLITE3) $${FEED_DATABASE} 'update option set value=1 where otid=-1'
+
 bin/.volatile:
 	mkdir $(dir $@); true
 	touch $@

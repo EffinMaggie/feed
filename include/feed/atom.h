@@ -62,6 +62,39 @@ namespace feed
                 xml::parser parser = xml.parse (feed.source);
 
                 //std::string title = parser.evaluate("/atom:feed/atom:title");
+                if (parser.updateContext ("/atom:feed"))
+                {
+                    std::string xid = parser.evaluate ("atom:id");
+                    if (xid != "")
+                    {
+                        entry entry(context, xid);
+
+                        entry.addMeta (mtSourceFeed, feed.source);
+
+                        std::string value;
+
+                        if ((value = parser.evaluate("atom:title")) != "")
+                        {
+                            entry.addMeta (mtTitle, value);
+                        }
+                        if ((value = parser.evaluate("atom:subtitle")) != "")
+                        {
+                            entry.addMeta (mtSubtitle, value);
+                        }
+                        if ((value = parser.evaluate("atom:author/atom:name")) != "")
+                        {
+                            entry.addMeta (mtAuthorName, value);
+                        }
+                        if ((value = parser.evaluate("atom:author/atom:email")) != "")
+                        {
+                            entry.addMeta (mtAuthorEmail, value);
+                        }
+                        if ((value = parser.evaluate("atom:updated")) != "")
+                        {
+                            entry.addMeta (mtUpdated, value);
+                        }
+                    }
+                }
 
                 if (parser.updateContext ("/atom:feed/atom:entry[1]"))
                 do

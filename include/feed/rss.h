@@ -61,6 +61,60 @@ namespace feed
             {
                 xml::parser parser = xml.parse (feed.source);
 
+                if (parser.updateContext ("/rss/channel"))
+                {
+                    std::string xid = parser.evaluate ("atom:id");
+                    if (xid == "")
+                    {
+                        xid = parser.evaluate ("guid");
+                    }
+                    if (xid == "")
+                    {
+                        xid = parser.evaluate ("link");
+                    }
+                    if (xid != "")
+                    {
+                        entry entry(context, xid);
+
+                        entry.addMeta (mtSourceFeed, feed.source);
+
+                        std::string value;
+
+                        if ((value = parser.evaluate("atom:title")) != "")
+                        {
+                            entry.addMeta (mtTitle, value);
+                        }
+                        else if ((value = parser.evaluate("title")) != "")
+                        {
+                            entry.addMeta (mtTitle, value);
+                        }
+                        if ((value = parser.evaluate("atom:subtitle")) != "")
+                        {
+                            entry.addMeta (mtSubtitle, value);
+                        }
+                        if ((value = parser.evaluate("atom:author/atom:name")) != "")
+                        {
+                            entry.addMeta (mtAuthorName, value);
+                        }
+                        if ((value = parser.evaluate("atom:author/atom:email")) != "")
+                        {
+                            entry.addMeta (mtAuthorEmail, value);
+                        }
+                        if ((value = parser.evaluate("atom:updated")) != "")
+                        {
+                            entry.addMeta (mtUpdated, value);
+                        }
+                        if ((value = parser.evaluate("atom:summary")) != "")
+                        {
+                            entry.addMeta (mtAbstract, value);
+                        }
+                        else if ((value = parser.evaluate("description")) != "")
+                        {
+                            entry.addMeta (mtAbstract, value);
+                        }
+                    }
+                }
+
                 if (parser.updateContext ("/rss/channel/item[1]"))
                 do
                 {
