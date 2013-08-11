@@ -95,6 +95,14 @@ namespace feed
                     {
                         entry.addMeta (mtPublished, value);
                     }
+                    if ((value = parser.evaluate("atom:author/atom:name")) != "")
+                    {
+                        entry.addMeta (mtAuthorName, value);
+                    }
+                    if ((value = parser.evaluate("atom:author/atom:email")) != "")
+                    {
+                        entry.addMeta (mtAuthorEmail, value);
+                    }
                     if ((value = parser.evaluate("atom:content/@type")) != "")
                     {
                         entry.addMeta (mtContentMIME, value);

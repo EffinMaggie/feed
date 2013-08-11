@@ -109,6 +109,18 @@ namespace feed
                     {
                         entry.addMeta (mtPublished, value);
                     }
+                    if ((value = parser.evaluate("atom:author/atom:name")) != "")
+                    {
+                        entry.addMeta (mtAuthorName, value);
+                    }
+                    if ((value = parser.evaluate("atom:author/atom:email")) != "")
+                    {
+                        entry.addMeta (mtAuthorEmail, value);
+                    }
+                    else if ((value = parser.evaluate("author")) != "")
+                    {
+                        entry.addMeta (mtAuthorEmail, value);
+                    }
                     else if ((value = parser.evaluate("pubDate")) != "")
                     {
                         entry.addMeta (mtPublished, value);
