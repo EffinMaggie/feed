@@ -49,6 +49,9 @@ all: $(TARGETS)
 clean:
 	rm -f data.feed* $(TARGETS) sqlite3.o sqlite3.zip
 
+clean-binaries:
+	rm -f $(BINARIES)
+
 install: $(addprefix $(DEST)/,$(INSTALLTARGETS)) $(DESTDIR)/etc/profile.d/feed.sh
 
 uninstall:
