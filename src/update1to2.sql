@@ -22,3 +22,32 @@ insert or replace into query
     ('drop-proxy',   null, 'delete from option where otid = 0'),
 	('update',       null, 'update feedservice set updated = null')
 ;
+
+drop table if exists person;
+create table person
+(
+	id integer not null primary key
+);
+
+drop table if exists personmeta;
+create table personmeta
+(
+	id integer not null primary key,
+	pid integer not null,
+	mtid integer not null,
+	value,
+
+	foreign key (pid) references person(id),
+	foreign key (mtid) references metatype(id)
+);
+
+drop table if exists entryperson;
+create table entryperson
+(
+	id integer not null primary key,
+	eid integer not null,
+	pid integer not null,
+
+	foreign key (eid) references entry(id),
+	foreign key (pid) references person(id)
+);
