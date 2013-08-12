@@ -41,6 +41,7 @@ namespace feed
     {
     public:
         sqlite(const std::string &databaseFile)
+            : database(0)
         {
             if (sqlite3_open(databaseFile.c_str(), &database) != SQLITE_OK)
             {
@@ -49,6 +50,7 @@ namespace feed
         }
 
         sqlite(const std::string &databaseFile, const char *reference)
+            : database(0)
         {
             if (sqlite3_open_v2(databaseFile.c_str(), &database, SQLITE_OPEN_READWRITE, 0) != SQLITE_OK)
             {
@@ -65,7 +67,7 @@ namespace feed
 
         ~sqlite (void)
         {
-            if (sqlite3_close(database) != SQLITE_OK)
+            if (database && (sqlite3_close(database) != SQLITE_OK))
             {
                 throw sqlite::exception("could not close database", *this);
             }
@@ -78,7 +80,9 @@ namespace feed
                 : feed::exception(pString) {}
 
             exception(const std::string &pString, const sqlite &pSQL)
-                : feed::exception(pString + ": " + sqlite3_errmsg(pSQL.database)) {}
+                : feed::exception(pSQL.database ? pString + ": " + sqlite3_errmsg(pSQL.database)
+                                                : pString + ": no valid database context")
+                {}
         };
 
         class statement
@@ -98,10 +102,9 @@ namespace feed
 
             ~statement(void)
             {
-                if (sqlite3_finalize (stmt) != SQLITE_OK)
-                {
-                    throw sqlite::exception("sqlite3_finalize", sql);
-                }
+                // ignore error codes: these refer to errors encountered in
+                // sqlite3_step, which are thrown separately
+                sqlite3_finalize (stmt);
             }
 
             bool step (void)

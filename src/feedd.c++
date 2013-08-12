@@ -52,6 +52,10 @@ int main (int argc, char**argv)
     {
         return feed::processDaemon (opts, dbfile, background);
     }
+    catch (feed::sqlite::exception &e)
+    {
+        std::cerr << "TOP LEVEL SQL EXCEPTION: " << e.string << "\n";
+    }
     catch (feed::exception &e)
     {
         std::cerr << "TOP LEVEL EXCEPTION: " << e.string << "\n";
