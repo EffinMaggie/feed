@@ -60,10 +60,6 @@ int main (int argc, char**argv)
     {
         std::cerr << "TOP LEVEL EXCEPTION: " << e.string << "\n";
     }
-    catch (std::string &s)
-    {
-        std::cerr << "ABORTED: " << s << "\n";
-    }
 
     return -5;
 }

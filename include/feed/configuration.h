@@ -62,7 +62,7 @@ namespace feed
 
             if (schemaVersion != FEED_SCHEMAVERSION)
             {
-                throw "ERROR: invalid schema version: " + schemaVersion;
+                throw exception("ERROR: invalid schema version: " + schemaVersion);
             }
         }
 

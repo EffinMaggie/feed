@@ -338,18 +338,6 @@ namespace feed
             configuration.rollbackTransaction();
             throw e;
         }
-        catch (std::string &e)
-        {
-            std::cerr << "EXCEPTION: " << e << "\n";
-            configuration.rollbackTransaction();
-            throw exception(e);
-        }
-        catch (...)
-        {
-            std::cerr << "EXCEPTION: aborting\n";
-            configuration.rollbackTransaction();
-            throw exception("current transaction rolled back");
-        }
 
         sqlite::statement removePID
             ("delete from instance where pid = ?1", sql);
