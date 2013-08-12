@@ -53,7 +53,7 @@ namespace feed
 
             if (schemaVersion == "1")
             {
-                std::cerr << "updating database schema from version 1 to version 2\n";
+                std::cerr << "NOTICE: updating database schema from version 1 to version 2\n";
 
                 sql.import (data::update1to2);
 
@@ -62,7 +62,7 @@ namespace feed
 
             if (schemaVersion != FEED_SCHEMAVERSION)
             {
-                throw "invalid schema version: " + schemaVersion;
+                throw "ERROR: invalid schema version: " + schemaVersion;
             }
         }
 
