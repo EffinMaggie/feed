@@ -62,6 +62,25 @@ namespace feed
             {
                 xml::parser parser = xml.parse (feed.source);
 
+				entry entry(context, feed.source);
+
+				std::string value;
+
+                entry.addMeta (mtCanonicalURI, feed.source);
+
+                if ((value = parser.evaluate("/xhtml:html/xhtml:head/xhtml:title")) != "")
+                {
+                    entry.addMeta (mtTitle, value);
+                }
+                if ((value = parser.evaluate("/xhtml:html/xhtml:head/xhtml:meta[@name='author']/@content")) != "")
+                {
+                    entry.addMeta (mtAuthorName, value);
+                }
+                if ((value = parser.evaluate("/xhtml:html/xhtml:head/xhtml:meta[@name='description']/@content")) != "")
+                {
+                    entry.addMeta (mtAbstract, value);
+                }
+
                 if (parser.updateContext ("/xhtml:html/xhtml:head/xhtml:link[@rel='alternate'][(@type='application/atom+xml') or (@type='application/rss+xml')][1]"))
                 do
                 {
