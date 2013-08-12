@@ -27,134 +27,19 @@
 */
 
 #define DEFAULT_OPTIONS "BWARDNXH"
-#define DAEMON 1
 
-#include <cstdlib>
-#include <feed/daemon.h>
-#include <feed/query.h>
-#include <feed/macro.h>
+#include <feed/client.h>
 
 int main (int argc, char**argv)
 {
-    const char *opts   = DEFAULT_OPTIONS;
-    const char *dbfile = DEFAULT_DATABASE;
-    bool skipDaemon = false;
-    bool initialiseDatabase = true;
-    bool doClient = true;
-    const char *envopts = std::getenv ("FEEDD_OPTIONS");
-    const char *envdb = std::getenv ("FEED_DATABASE");
-
-    std::vector<std::string> cmd;
-
-    if (envopts)
+    try
     {
-        opts = envopts;
+        return feed::processClient(argc, argv);
+    }
+    catch (feed::exception &e)
+    {
+        std::cerr << "TOP LEVEL EXCEPTION: " << e.string << "\n";
     }
 
-    if (envdb)
-    {
-        dbfile = envdb;
-    }
-
-    for (int i = 0; (i < argc) && (argv[i]); i++)
-    {
-        std::string s = argv[i];
-
-        if (s == "--daemon")
-        {
-            if (i++, (i < argc) && (argv[i]))
-            {
-                opts = argv[i];
-            }
-        }
-        else if (s == "--database")
-        {
-            if (i++, (i < argc) && (argv[i]))
-            {
-                dbfile = argv[i];
-            }
-        }
-        else if (s == "--skip-daemon")
-        {
-            skipDaemon = true;
-        }
-        else if (i > 0)
-        {
-            cmd.push_back (s);
-        }
-    }
-
-    if (initialiseDatabase)
-    {
-        feed::sqlite sql (dbfile, feed::data::feed);
-        feed::configuration configuration (sql);
-        dbfile = realpath (dbfile, 0);
-
-        if (dbfile == 0)
-        {
-            std::cerr << "ABORTED: call to realpath(dbfile) failed\n";
-            return -3;
-        }
-    }
-
-    if (!skipDaemon)
-    {
-        bool background = false;
-
-        try
-        {
-            doClient = (feed::processDaemon (std::string(opts) + "B", dbfile, background) == 1);
-        }
-        catch (feed::exception &e)
-        {
-            std::cerr << "ABORTED: " << e.string << "\n";
-            return -1;
-        }
-    }
-
-    if (doClient)
-    {
-        feed::sqlite sql
-            (dbfile, feed::data::feed);
-        feed::configuration configuration
-            (sql);
-
-        if (cmd.size() == 0)
-        {
-            cmd.push_back ("new");
-        }
-
-        for (std::vector<std::string>::iterator it = cmd.begin();
-             it != cmd.end();
-             it++)
-        {
-            const std::string s(*it);
-            std::string ex;
-
-            try
-            {
-                feed::query query (configuration, s);
-                query.run(it, cmd.end());
-                continue;
-            }
-            catch (feed::exception &e)
-            {
-                ex = e.string;
-            }
-
-            try
-            {
-                feed::macro macro (configuration, s);
-                macro.run(it, cmd.end());
-                continue;
-            }
-            catch (feed::exception &e)
-            {
-                std::cerr << "INVALID QUERY: " << s << ": " << ex << "\n";
-                std::cerr << "INVALID MACRO: " << s << ": " << e.string << "\n";
-            }
-        }
-    }
-
-    return 0;
+    return -5;
 }
