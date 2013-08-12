@@ -20,8 +20,19 @@ insert or replace into query
     (flag, interval, query)
     values
     ('drop-proxy',   null, 'delete from option where otid = 0'),
-	('update',       null, 'update feedservice set updated = null')
+	('update',       null, 'update feedservice set updated = null'),
+	('status',       null, 'select * from vstatus')
 ;
+
+drop view if exists vstatus;
+create view vstatus as
+select ' [ '
+    || (select count(*)
+          from download
+		 where completiontime is null)
+    || ' / ' || count(*) || ' ]\tactive/total downloads
+ [ ' || coalesce(sum(length(data)) / 1024, '-') || ' ]\ttotal download size/KiB' as description
+  from download;
 
 drop table if exists person;
 create table person
