@@ -82,6 +82,18 @@ namespace feed
         pIPv4             = 0,
         pIPv6             = 1
     };
+
+    enum relation
+    {
+        rAlternate        = 0,
+        rUses             = 1,
+        rLinksTo          = 2,
+        rPaymentOf        = 3,
+        rAuthor           = 4,
+        rContributor      = 5,
+        rEditor           = 6,
+        rWebmaster        = 7
+    };
 };
 
 #endif

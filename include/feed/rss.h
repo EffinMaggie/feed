@@ -92,14 +92,6 @@ namespace feed
                         {
                             entry.addMeta (mtSubtitle, value);
                         }
-                        if ((value = parser.evaluate("atom:author/atom:name")) != "")
-                        {
-                            entry.addMeta (mtAuthorName, value);
-                        }
-                        if ((value = parser.evaluate("atom:author/atom:email")) != "")
-                        {
-                            entry.addMeta (mtAuthorEmail, value);
-                        }
                         if ((value = parser.evaluate("atom:updated")) != "")
                         {
                             entry.addMeta (mtUpdated, value);
@@ -112,6 +104,8 @@ namespace feed
                         {
                             entry.addMeta (mtAbstract, value);
                         }
+
+                        parsePersons (parser, entry);
                     }
                 }
 
@@ -163,18 +157,6 @@ namespace feed
                     {
                         entry.addMeta (mtPublished, value);
                     }
-                    if ((value = parser.evaluate("atom:author/atom:name")) != "")
-                    {
-                        entry.addMeta (mtAuthorName, value);
-                    }
-                    if ((value = parser.evaluate("atom:author/atom:email")) != "")
-                    {
-                        entry.addMeta (mtAuthorEmail, value);
-                    }
-                    else if ((value = parser.evaluate("author")) != "")
-                    {
-                        entry.addMeta (mtAuthorEmail, value);
-                    }
                     else if ((value = parser.evaluate("pubDate")) != "")
                     {
                         entry.addMeta (mtPublished, value);
@@ -222,6 +204,8 @@ namespace feed
                         entry.addMeta (mtContentMIME, "text/html");
                     }
 
+                    parsePersons (parser, entry);
+
                     std::cerr << "r";
                 }
                 while (parser.updateContext ("following-sibling::item[1]"));
@@ -236,6 +220,76 @@ namespace feed
         }
 
     protected:
+        void parsePersons (xml::parser &parser, entry &entry)
+        {
+            if (parser.updateContext ("atom:author[1]"))
+            {
+                do
+                {
+                    person person = parsePersonData (parser);
+                    person.relatedTo (rAuthor, entry);
+                }
+                while (parser.updateContext ("following-sibling::atom:author[1]"));
+
+                parser.updateContext ("..");
+            }
+            if (parser.updateContext ("atom:contributor[1]"))
+            {
+                do
+                {
+                    person person = parsePersonData (parser);
+                    person.relatedTo (rContributor, entry);
+                }
+                while (parser.updateContext ("following-sibling::atom:contributor[1]"));
+
+                parser.updateContext ("..");
+            }
+
+            std::string email;
+            if ((email = parser.evaluate("author")) != "")
+            {
+                person person (context, email, mtAuthorEmail);
+                person.relatedTo (rAuthor, entry);
+            }
+            if ((email = parser.evaluate("managingEditor")) != "")
+            {
+                person person (context, email, mtAuthorEmail);
+                person.relatedTo (rEditor, entry);
+            }
+            if ((email = parser.evaluate("webMaster")) != "")
+            {
+                person person (context, email, mtAuthorEmail);
+                person.relatedTo (rWebmaster, entry);
+            }
+        }
+
+        person parsePersonData (xml::parser &parser)
+        {
+            const std::string email = parser.evaluate("atom:email");
+            const std::string name  = parser.evaluate("atom:name");
+            const std::string uri   = parser.evaluate("atom:uri");
+            if (email != "")
+            {
+                person person (context, email, mtAuthorEmail);
+                if (name != "") { person.addMeta (mtAuthorName,  name); }
+                if (uri  != "") { person.addMeta (mtCanonicalURI, uri); }
+                return person;
+            } 
+            else if (name != "")
+            {
+                person person (context, name, mtAuthorName);
+                if (uri  != "") { person.addMeta (mtCanonicalURI, uri); }
+                return person;
+            }
+            else if (name != "")
+            {
+                person person (context, uri, mtCanonicalURI);
+                return person;
+            }
+
+            person person (context, "Anonymous", mtAuthorName);
+            return person;
+        }
         xml &xml;
     };
 };

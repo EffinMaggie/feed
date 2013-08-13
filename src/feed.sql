@@ -206,7 +206,7 @@ insert into relation
     values
     ( 0, 'is alternate version of'),
     ( 1, 'uses'),
-    ( 2, 'is hyperlink to'),
+    ( 2, 'links to'),
     ( 3, 'is payment link of')
 ;
 

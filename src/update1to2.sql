@@ -1,9 +1,17 @@
 pragma journal_mode=wal;
 
+-- update schema version number
 insert or replace into option
     (otid, value)
     values
     (-1, '2')
+;
+
+-- tell old daemons to shut down
+insert or ignore into clientcommand
+    (cmid)
+    values
+    (2)
 ;
 
 delete
@@ -22,6 +30,19 @@ insert or replace into query
     ('drop-proxy',   null, 'delete from option where otid = 0'),
 	('update',       null, 'update feedservice set updated = null'),
 	('status',       null, 'select * from vstatus')
+;
+
+update relation
+   set description = 'links to'
+ where id = 2;
+
+insert into relation
+    (id, description)
+    values
+    ( 4, 'is author of'),
+    ( 5, 'is contributor to'),
+    ( 6, 'is editor of'),
+    ( 7, 'is webmaster for')
 ;
 
 drop view if exists vstatus;
@@ -51,6 +72,8 @@ create table personmeta
     mtid integer not null,
     value,
 
+    unique (pid, mtid, value),
+
     foreign key (pid) references person(id),
     foreign key (mtid) references metatype(id)
 );
@@ -61,7 +84,9 @@ create table entryperson
     id integer not null primary key,
     eid integer not null,
     pid integer not null,
+    rid integer not null,
 
     foreign key (eid) references entry(id),
-    foreign key (pid) references person(id)
+    foreign key (pid) references person(id),
+    foreign key (rid) references relation(id)
 );

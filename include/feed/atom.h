@@ -32,6 +32,7 @@
 #include <feed/handler.h>
 #include <feed/entry.h>
 #include <feed/xml.h>
+#include <feed/person.h>
 
 namespace feed
 {
@@ -81,18 +82,12 @@ namespace feed
                         {
                             entry.addMeta (mtSubtitle, value);
                         }
-                        if ((value = parser.evaluate("atom:author/atom:name")) != "")
-                        {
-                            entry.addMeta (mtAuthorName, value);
-                        }
-                        if ((value = parser.evaluate("atom:author/atom:email")) != "")
-                        {
-                            entry.addMeta (mtAuthorEmail, value);
-                        }
                         if ((value = parser.evaluate("atom:updated")) != "")
                         {
                             entry.addMeta (mtUpdated, value);
                         }
+
+                        parsePersons (parser, entry);
                     }
                 }
 
@@ -128,14 +123,6 @@ namespace feed
                     {
                         entry.addMeta (mtPublished, value);
                     }
-                    if ((value = parser.evaluate("atom:author/atom:name")) != "")
-                    {
-                        entry.addMeta (mtAuthorName, value);
-                    }
-                    if ((value = parser.evaluate("atom:author/atom:email")) != "")
-                    {
-                        entry.addMeta (mtAuthorEmail, value);
-                    }
                     if ((value = parser.evaluate("atom:content/@type")) != "")
                     {
                         entry.addMeta (mtContentMIME, value);
@@ -166,6 +153,8 @@ namespace feed
                         entry.addMeta (mtContent, value);
                     }
 
+                    parsePersons (parser, entry);
+
                     std::cerr << "a";
                 }
                 while (parser.updateContext ("following-sibling::atom:entry[1]"));
@@ -180,6 +169,60 @@ namespace feed
         }
 
     protected:
+        void parsePersons (xml::parser &parser, entry &entry)
+        {
+            if (parser.updateContext ("atom:author[1]"))
+            {
+                do
+                {
+                    person person = parsePersonData (parser);
+                    person.relatedTo (rAuthor, entry);
+                }
+                while (parser.updateContext ("following-sibling::atom:author[1]"));
+
+                parser.updateContext ("..");
+            }
+            if (parser.updateContext ("atom:contributor[1]"))
+            {
+                do
+                {
+                    person person = parsePersonData (parser);
+                    person.relatedTo (rContributor, entry);
+                }
+                while (parser.updateContext ("following-sibling::atom:contributor[1]"));
+
+                parser.updateContext ("..");
+            }
+        }
+
+        person parsePersonData (xml::parser &parser)
+        {
+            const std::string email = parser.evaluate("atom:email");
+            const std::string name  = parser.evaluate("atom:name");
+            const std::string uri   = parser.evaluate("atom:uri");
+            if (email != "")
+            {
+                person person (context, email, mtAuthorEmail);
+                if (name != "") { person.addMeta (mtAuthorName,  name); }
+                if (uri  != "") { person.addMeta (mtCanonicalURI, uri); }
+                return person;
+            } 
+            else if (name != "")
+            {
+                person person (context, name, mtAuthorName);
+                if (uri  != "") { person.addMeta (mtCanonicalURI, uri); }
+                return person;
+            }
+            else if (name != "")
+            {
+                person person (context, uri, mtCanonicalURI);
+                return person;
+            }
+
+            person person (context, "Anonymous", mtAuthorName);
+            return person;
+        }
+
         xml &xml;
     };
 };
