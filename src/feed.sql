@@ -236,7 +236,8 @@ for each row begin
                mid,
                value
           from entrymeta
-         where eid = new.eid1;
+         where eid = new.eid1
+           and mid in (1);
 
     insert or ignore into entrymeta
         (eid, mid, value)
@@ -244,7 +245,8 @@ for each row begin
                mid,
                value
           from entrymeta
-         where eid = new.eid2;
+         where eid = new.eid2
+           and mid in (1);
 end;
 
 create table status
@@ -550,8 +552,10 @@ select entry.id as eid,
                 julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5))) as updated,
        (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5) as published,
        (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 14) is not null as read,
-       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 15) is not null as marked
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 15) is not null as marked,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 11) as fid
   from entry
+ where (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 11) is not null
 ;
 
 create table instance

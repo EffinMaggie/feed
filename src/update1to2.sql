@@ -111,3 +111,42 @@ for each row begin
       from feedservice
      where fid = old.id;
 end;
+
+drop view if exists vheadline;
+create view vheadline as
+select entry.id as eid,
+       entry.xid as xid,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 0) as cid,
+       coalesce((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 1), 'no title') as title,
+       coalesce(julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 4)),
+                julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5))) as updated,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5) as published,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 14) is not null as read,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 15) is not null as marked,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 11) as fid
+  from entry
+ where (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 11) is not null
+;
+
+drop trigger if exists entryrelationSync;
+create trigger entryrelationSync after insert on entryrelation
+for each row begin
+    insert or ignore into entrymeta
+        (eid, mid, value)
+        select new.eid2 as eid,
+               mid,
+               value
+          from entrymeta
+         where eid = new.eid1
+           and mid in (1);
+
+    insert or ignore into entrymeta
+        (eid, mid, value)
+        select new.eid1 as eid,
+               mid,
+               value
+          from entrymeta
+         where eid = new.eid2
+           and mid in (1);
+end;
+
