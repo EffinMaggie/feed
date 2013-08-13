@@ -88,6 +88,7 @@ namespace feed
                         }
 
                         parsePersons (parser, entry);
+                        parseLinks   (parser, entry);
                     }
                 }
 
@@ -154,6 +155,7 @@ namespace feed
                     }
 
                     parsePersons (parser, entry);
+                    parseLinks   (parser, entry);
 
                     std::cerr << "a";
                 }
@@ -221,6 +223,66 @@ namespace feed
 
             person person (context, "Anonymous", mtAuthorName);
             return person;
+        }
+
+        void parseLinks (xml::parser &parser, entry &entry)
+        {
+            if (parser.updateContext ("atom:link[1]"))
+            {
+                do
+                {
+                    (void)parseLinkData (parser, entry);
+                }
+                while (parser.updateContext ("following-sibling::atom:link[1]"));
+
+                parser.updateContext ("..");
+            }
+        }
+
+        entry parseLinkData (xml::parser &parser, entry &source)
+        {
+            const std::string uri      = parser.evaluate("@href");
+            const std::string rel      = parser.evaluate("@rel");
+            const std::string type     = parser.evaluate("@type");
+            const std::string hreflang = parser.evaluate("@hreflang");
+            const std::string title    = parser.evaluate("@title");
+            // const std::string length   = parser.evaluate("@href");
+
+            if (uri != "")
+            {
+                entry entry   (context, uri);
+                entry.addMeta (mtCanonicalURI, uri);
+                if (rel == "payment")
+                {
+                    source.linkTo (rPaymentOf, entry);
+                }
+                else if (rel == "alternate")
+                {
+                    source.linkTo (rAlternate, entry);
+                }
+                else
+                {
+                    source.linkTo (rLinksTo, entry);
+                }
+                if (type != "")
+                {
+                    entry.addMeta (mtContentMIME, type);
+                }
+                if (hreflang != "")
+                {
+                    entry.addMeta (mtLanguage, hreflang);
+                }
+                if (title != "")
+                {
+                    entry.addMeta (mtTitle, title);
+                }
+                return entry;
+            }
+            else
+            {
+                entry entry(context, "bad-link");
+                return entry;
+            }
         }
 
         xml &xml;

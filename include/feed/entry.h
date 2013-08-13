@@ -96,6 +96,18 @@ namespace feed
             return true;
         }
 
+        bool linkTo (enum relation r, const entry &to)
+        {
+            int rc = (int)r;
+            sqlite::statement stmt ("insert or ignore into entryrelation (eid1, eid2, rid) values (?1, ?2, ?3)", configuration.sql);
+            stmt.bind (1, id);
+            stmt.bind (2, to.id);
+            stmt.bind (3, rc);
+            stmt.step ();
+
+            return true;
+        }
+
     protected:
         configuration &configuration;
     };

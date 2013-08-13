@@ -36,7 +36,7 @@ update relation
    set description = 'links to'
  where id = 2;
 
-insert into relation
+insert or replace into relation
     (id, description)
     values
     ( 4, 'is author of'),
@@ -90,3 +90,14 @@ create table entryperson
     foreign key (pid) references person(id),
     foreign key (rid) references relation(id)
 );
+
+drop view if exists vperson;
+create view vperson as
+select person.id   as pid,
+       name.value  as name,
+       email.value as email,
+       uri.value   as uri
+  from person
+  left join personmeta as name  on name.mtid  = 12 and name.pid  = person.id
+  left join personmeta as email on email.mtid = 13 and email.pid = person.id
+  left join personmeta as uri   on uri.mtid   = 10 and uri.pid   = person.id;
