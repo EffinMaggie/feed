@@ -7,7 +7,7 @@ TARGETS:=$(BINARIES) include/feed/data-feed.h
 DESTDIR:=
 PREFIX:=/usr/local
 DEST:=$(DESTDIR)$(PREFIX)
-VERSION:=1
+VERSION:=2
 
 # programmes
 SQLITE3:=sqlite3
