@@ -42,7 +42,8 @@ insert or replace into relation
     ( 4, 'is author of'),
     ( 5, 'is contributor to'),
     ( 6, 'is editor of'),
-    ( 7, 'is webmaster for')
+    ( 7, 'is webmaster for'),
+    ( 8, 'encloses')
 ;
 
 drop view if exists vstatus;
@@ -101,3 +102,11 @@ select person.id   as pid,
   left join personmeta as name  on name.mtid  = 12 and name.pid  = person.id
   left join personmeta as email on email.mtid = 13 and email.pid = person.id
   left join personmeta as uri   on uri.mtid   = 10 and uri.pid   = person.id;
+
+drop trigger if exists feedDelete;
+create trigger feedDelete after delete on feed
+for each row begin
+    delete
+      from feedservice
+     where fid = old.id;
+end;

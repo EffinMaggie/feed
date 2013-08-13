@@ -92,7 +92,8 @@ namespace feed
         rAuthor           = 4,
         rContributor      = 5,
         rEditor           = 6,
-        rWebmaster        = 7
+        rWebmaster        = 7,
+        rEncloses         = 8
     };
 };
 
