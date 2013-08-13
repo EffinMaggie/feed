@@ -4,7 +4,8 @@ pragma journal_mode=wal;
 insert or replace into option
     (otid, value)
     values
-    (-1, '2')
+    (-1, '2'),
+    ( 1, 'FEED/2')
 ;
 
 -- tell old daemons to shut down

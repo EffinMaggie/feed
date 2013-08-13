@@ -24,7 +24,7 @@ create table option
 insert into option
     (otid, value)
     values
-    (  -1, '1');
+    (  -1, '2');
 
 create table service
 (
@@ -207,7 +207,12 @@ insert into relation
     ( 0, 'is alternate version of'),
     ( 1, 'uses'),
     ( 2, 'links to'),
-    ( 3, 'is payment link of')
+    ( 3, 'is payment link of'),
+    ( 4, 'is author of'),
+    ( 5, 'is contributor to'),
+    ( 6, 'is editor of'),
+    ( 7, 'is webmaster for'),
+    ( 8, 'encloses')
 ;
 
 create table entryrelation
@@ -422,9 +427,11 @@ insert into query
     ('time',         null, 'select julianday(''now'')'),
     ('mark-next',    null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 15, 1 from vheadline where read = 0 order by updated desc limit 1'),
     ('mark-read',    null, 'insert or ignore into entrymeta (eid, mid, value) select eid, 14, 1 from entrymeta where mid = 15 limit 1'),
-    ('drop-proxy',   null, 'delete from options where otid = 0'),
+    ('drop-proxy',   null, 'delete from option where otid = 0'),
     ('title-marked', null, 'select ''['' || eid || '']'', round(updated,2), title from vheadline where marked order by updated desc limit 1'),
-    ('all-read',     null, 'insert or ignore into entrymeta (eid, mid, value) select id, 14, 1 from entry')
+    ('all-read',     null, 'insert or ignore into entrymeta (eid, mid, value) select id, 14, 1 from entry'),
+	('update',       null, 'update feedservice set updated = null'),
+	('status',       null, 'select * from vstatus')
 ;
 
 insert into query
@@ -432,7 +439,7 @@ insert into query
     values
     ('add',         1, 'insert into feed (source) values (?1)'),
     ('remove',      1, 'delete from feed where source = ?1'),
-    ('use-proxy',   1, 'insert or replace into options (otid, value) values (0, ?1)')
+    ('use-proxy',   1, 'insert or replace into option (otid, value) values (0, ?1)')
 ;
 
 create table viewer
@@ -558,9 +565,73 @@ create table instance
 insert or replace into option
     (otid, value)
     values
-    -- CURL proxy settings
-    -- (   0, 'socks5h://127.0.0.1:12050'),
-
     -- The User Agent string to send
-    (   1, 'FEED/1')
+    (   1, 'FEED/2')
 ;
+
+-- new tables and views from version 2
+
+drop view if exists vstatus;
+create view vstatus as
+select ' [ '
+    || (select count(*)
+          from download
+         where completiontime is null)
+    || ' / ' || count(*) || ' ]\tactive/total downloads
+ [ ' || coalesce(sum(length(data)) / 1024, '-') || ' ]\ttotal download size/KiB' as description
+  from download
+union
+select ' [ ' || group_concat(pid) || ' ]\tdaemon PID' as description
+  from instance;
+
+drop table if exists person;
+create table person
+(
+    id integer not null primary key
+);
+
+drop table if exists personmeta;
+create table personmeta
+(
+    id integer not null primary key,
+    pid integer not null,
+    mtid integer not null,
+    value,
+
+    unique (pid, mtid, value),
+
+    foreign key (pid) references person(id),
+    foreign key (mtid) references metatype(id)
+);
+
+drop table if exists entryperson;
+create table entryperson
+(
+    id integer not null primary key,
+    eid integer not null,
+    pid integer not null,
+    rid integer not null,
+
+    foreign key (eid) references entry(id),
+    foreign key (pid) references person(id),
+    foreign key (rid) references relation(id)
+);
+
+drop view if exists vperson;
+create view vperson as
+select person.id   as pid,
+       name.value  as name,
+       email.value as email,
+       uri.value   as uri
+  from person
+  left join personmeta as name  on name.mtid  = 12 and name.pid  = person.id
+  left join personmeta as email on email.mtid = 13 and email.pid = person.id
+  left join personmeta as uri   on uri.mtid   = 10 and uri.pid   = person.id;
+
+drop trigger if exists feedDelete;
+create trigger feedDelete after delete on feed
+for each row begin
+    delete
+      from feedservice
+     where fid = old.id;
+end;
