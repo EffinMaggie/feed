@@ -1,3 +1,5 @@
+pragma journal_mode=wal;
+
 create table optiontype
 (
     id integer not null primary key,
