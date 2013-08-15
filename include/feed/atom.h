@@ -71,6 +71,7 @@ namespace feed
                         entry entry(context, xid);
 
                         entry.addMeta (mtSourceFeed, feed.source);
+                        entry.addMeta (mtCanonicalURI, feed.source);
 
                         std::string value;
 

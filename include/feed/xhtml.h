@@ -90,8 +90,14 @@ namespace feed
                         continue;
                     }
 
-                    insertFeed.bind (1, xml.buildURI(href, feed.source));
+                    href = xml.buildURI(href, feed.source);
+
+                    insertFeed.bind (1, href);
                     insertFeed.stepReset();
+
+				    typeof(entry) n (context, href);
+                    n.addMeta (mtCanonicalURI, href);
+                    entry.linkTo (rLinksTo, n);
 
                     std::cerr << "x";
                 }
