@@ -73,6 +73,18 @@ namespace feed
 
             if (addNew)
             {
+                sqlite::statement stmt ("select eid from entrymeta where value = ?1", configuration.sql);
+                stmt.bind (1, xid);
+                stmt.step ();
+                if (stmt.row)
+                {
+                    stmt.get (0, id);
+                    addNew = false;
+                }
+            }
+
+            if (addNew)
+            {
                 sqlite::statement stmt ("insert or replace into entry (xid) values (?1)", configuration.sql);
                 stmt.bind (1, xid);
                 stmt.step ();
