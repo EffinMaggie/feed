@@ -10,23 +10,60 @@ select 'ne' || id as nid,
        replace(replace((select value from entrymeta where mid=10 and eid=entry.id), '"', ''''), '
 ', '') as uri
   from entry
-union all
+ where exists (select value from entrymeta where mid=11 and eid=entry.id)
+    or exists (select id from feed where source = (select value from entrymeta where mid=10 and eid=entry.id))
+union
 select 'np' || id as nid,
        0.2 as margin,
-       coalesce((select name from vperson where pid=id),
-                (select email from vperson where pid=id),
-                'person #' || id) as title,
-       coalesce((select uri from vperson where pid=id),
-                'mailto:' || (select email from vperson where pid=id),
-                null) as uri
+       (select coalesce(name,email,uri,'person #' || pid) from vperson where pid=person.id) as title,
+       (select coalesce(uri,'mailto:' || email,null) from vperson where pid=person.id) as uri
   from person;
 
-          select 'digraph FEED { overlap=true; layout=neato; nodesep=1; sep=1; maxiter=500; '
-union all select distinct '  ' || nid || ' [ margin=' || margin || ' label="' || title || '" URL="' || uri || '" color=none shape=plaintext ];' from vgraphnodes
-union all select distinct '  ne' || eid1 || ' -> ne' || eid2 || ' [ color="blue" weight=1 len=3 ];' from entryrelation where eid1 <> eid2
-union all select distinct '  np' || pid || ' -> ne' || eid || ' [ color="red" weight=0.1 len=2 ];' from entryperson
-union all select distinct '  ne' || (select eid from entrymeta as m2 where mid=10 and m1.value = m2.value) || ' -> ne' || eid || ' [ color="purple" weight=5 len=4 ];' from entrymeta as m1 where mid=11
-union all select '}'
+drop view if exists vgraphedges;
+create view vgraphedges as
+select distinct
+       'ne' || eid1 as nid1,
+       'ne' || eid2 as nid2,
+       'color="blue" weight=1 len=3' as attributes
+ from entryrelation where eid1 <> eid2
+union
+select distinct
+       'np' || pid as nid1,
+       'ne' || eid as nid2,
+       'color="red" weight=1.5 len=4' as attributes
+  from entryperson
+union
+select distinct
+       'ne' || (select eid from entrymeta as m2 where mid=10 and m1.value = m2.value) as nid1,
+       'ne' || eid as nid2,
+       'color="purple" weight=4 len=5' as attributes
+  from entrymeta as m1
+ where mid=11
+;
+
+drop view if exists vegraphedges;
+create view vegraphedges as
+select distinct
+       nid1, nid2, attributes
+  from vgraphedges, vgraphnodes as n1, vgraphnodes as n2
+ where vgraphedges.nid1 = n1.nid
+   and vgraphedges.nid2 = n2.nid
+;
+
+select 'graph FEED { overlap=true; layout=neato; nodesep=1; sep=1; maxiter=500; '
+union all
+select distinct
+       nid
+    || ' [ margin=' || margin
+    || coalesce(' label="' || title || '"','')
+    || coalesce(' URL="' || uri || '"','')
+    || ' color=transparent shape=plaintext fontsize=12 ];'
+  from vgraphnodes
+union all
+select nid1 || ' -- ' || nid2 || ' [ '|| attributes || ' ];'
+  from vegraphedges
+union all
+select '}'
 ;
 SQL
 
