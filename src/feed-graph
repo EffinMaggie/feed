@@ -1,0 +1,39 @@
+#!/bin/bash
+
+sqlite3 $FEED_DATABASE > feed.dot <<SQL
+drop view if exists vgraphnodes;
+create view vgraphnodes as
+select 'ne' || id as nid,
+       0.1 as margin,
+       replace(replace(coalesce ((select value from entrymeta where mid=1 and eid=entry.id), 'entry #' || id), '"', ''''), '
+', '') as title,
+       replace(replace((select value from entrymeta where mid=10 and eid=entry.id), '"', ''''), '
+', '') as uri
+  from entry
+union all
+select 'np' || id as nid,
+       0.2 as margin,
+       coalesce((select name from vperson where pid=id),
+                (select email from vperson where pid=id),
+                'person #' || id) as title,
+       coalesce((select uri from vperson where pid=id),
+                'mailto:' || (select email from vperson where pid=id),
+                null) as uri
+  from person
+union all
+select 'nf' || id as nid,
+       0.3 as margin,
+       source as title,
+       source as uri
+  from feed;
+
+          select 'digraph FEED { overlap=true; layout=neato; nodesep=1; sep=1; '
+union all select distinct '  ' || nid || ' [ margin=' || margin || ' label="' || title || '" URL="' || uri || '" color=none shape=plaintext ];' from vgraphnodes
+union all select distinct '  ne' || eid1 || ' -> ne' || eid2 || ' [ color="blue" weight=1 len=3 ];' from entryrelation where eid1 <> eid2
+union all select distinct '  np' || pid || ' -> ne' || eid || ' [ color="red" weight=0.1 len=2 ];' from entryperson
+union all select distinct '  nf' || (select id from feed where source = value) || ' -> ne' || eid || ' [ color="purple" weight=5 len=4 ];' from entrymeta where mid=11
+union all select '}'
+;
+SQL
+
+dot -Tsvg -ofeed.svg feed.dot
