@@ -26,24 +26,55 @@
  * THE SOFTWARE.
 */
 
-#define DEFAULT_OPTIONS "BWARDNXHI"
+#if !defined(FEED_ICAL_H)
+#define FEED_ICAL_H
 
-#include <feed/client.h>
+#include <feed/handler.h>
+#include <feed/entry.h>
+#include <feed/xml.h>
+#include <feed/download.h>
+#include <boost/regex.hpp>
+#include <sstream>
 
-int main (int argc, char**argv)
+namespace feed
 {
-    try
+    class ical : public handler
     {
-        return feed::processClient(argc, argv);
-    }
-    catch (feed::sqlite::exception &e)
-    {
-        std::cerr << "TOP LEVEL SQL EXCEPTION: " << e.string << "\n";
-    }
-    catch (feed::exception &e)
-    {
-        std::cerr << "TOP LEVEL EXCEPTION: " << e.string << "\n";
-    }
+    public:
+        ical(configuration &pConfiguration, const bool &pEnabled, download &pDownload)
+            : handler(pConfiguration, stICal, pEnabled), download(pDownload)
+        {}
 
-    return -5;
-}
+        virtual bool handle
+            (const enum servicetype &st,
+             feed::feed &feed)
+        {
+            if (!enabled)
+            {
+                return false;
+            }
+
+            if (st != stICal)
+            {
+                return false;
+            }
+            std::cerr << "I";
+
+            try
+            {
+                download::data data = download.retrieve (feed.source);
+            }
+            catch (exception &e)
+            {
+                std::cerr << "EXCEPTION: " << e.string << "\n";
+            }
+
+            return true;
+        }
+
+    protected:
+        download &download;
+    };
+};
+
+#endif

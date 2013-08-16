@@ -31,9 +31,10 @@
 
 #include <feed/sql.h>
 #include <feed/data-update1to2.h>
+#include <feed/data-update2to3.h>
 
 #if !defined(FEED_SCHEMAVERSION)
-#define FEED_SCHEMAVERSION "2"
+#define FEED_SCHEMAVERSION "3"
 #endif
 
 namespace feed
@@ -56,6 +57,15 @@ namespace feed
                 std::cerr << "NOTICE: updating database schema from version 1 to version 2\n";
 
                 sql.import (data::update1to2);
+
+                updateConfiguration ();
+            }
+
+            if (schemaVersion == "2")
+            {
+                std::cerr << "NOTICE: updating database schema from version 2 to version 3\n";
+
+                sql.import (data::update2to3);
 
                 updateConfiguration ();
             }

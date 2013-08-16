@@ -44,6 +44,7 @@ namespace feed
         stRSS             = 1,
         stWhois           = 2,
         stDNS             = 3,
+        stICal            = 4,
         stXHTML           = 5,
         stHTML            = 6,
         stDownload        = 7

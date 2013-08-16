@@ -41,10 +41,11 @@
 #include <feed/dns.h>
 #include <feed/xhtml.h>
 #include <feed/html.h>
+#include <feed/ical.h>
 #include <feed/data-feed.h>
 
 #if !defined(DEFAULT_OPTIONS)
-#define DEFAULT_OPTIONS "WARDNXH"
+#define DEFAULT_OPTIONS "WARDNXHI"
 #endif
 
 #if !defined(DEFAULT_DATABASE)
@@ -73,6 +74,7 @@ namespace feed
         bool processDNS = false;
         bool processXHTML = false;
         bool processHTML = false;
+        bool processICal = false;
         bool allowSecondary = false;
         bool forkToBackground = false;
         bool recordInstance = true;
@@ -89,6 +91,7 @@ namespace feed
                 case 'N': processDNS = true; break;
                 case 'X': processXHTML = true; break;
                 case 'H': processHTML = true; break;
+                case 'I': processICal = true; break;
                 case 'S': allowSecondary = true; break;
             }
         }
@@ -211,6 +214,7 @@ namespace feed
         dns dns(configuration, processDNS, xml);
         xhtml xhtml(configuration, processXHTML, xml);
         html html(configuration, processHTML, xml);
+        ical ical(configuration, processICal, download);
 
         try
         {
@@ -254,6 +258,7 @@ namespace feed
                             dns.handle      (st, feed) && feed.serviceUpdate(st);
                             xhtml.handle    (st, feed) && feed.serviceUpdate(st);
                             html.handle     (st, feed) && feed.serviceUpdate(st);
+                            ical.handle     (st, feed) && feed.serviceUpdate(st);
                             download.handle (st, feed) && feed.serviceUpdate(st);
                         }   break;
                         case ctQuery:
@@ -301,6 +306,7 @@ namespace feed
                             clear = download.handleCompleteDownload (st, did) || clear;
                             clear = xhtml.handleCompleteDownload    (st, did) || clear;
                             clear = html.handleCompleteDownload     (st, did) || clear;
+                            clear = ical.handleCompleteDownload     (st, did) || clear;
 
                             if (clear)
                             {

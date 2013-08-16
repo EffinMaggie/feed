@@ -26,8 +26,6 @@
  * THE SOFTWARE.
 */
 
-#define DEFAULT_OPTIONS "BWARDNXH"
-
 #include <feed/client.h>
 
 int main (int argc, char**argv)
