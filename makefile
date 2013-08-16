@@ -1,4 +1,4 @@
-BINARIES:=bin/feedd bin/feed
+BINARIES:=bin/feedd bin/feed bin/feedc
 INCLUDES:=$(wildcard include/feed/*.h)
 MANPAGES:=$(addprefix share/man/man1/,$(notdir $(wildcard src/*.1)))
 DATAHEADERS:=include/feed/data-feed.h include/feed/data-update1to2.h

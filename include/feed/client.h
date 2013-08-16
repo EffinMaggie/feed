@@ -38,11 +38,10 @@
 
 namespace feed
 {
-    int processClient (int argc, char**argv)
+    int processClient (int argc, char**argv, bool skipDaemon = false)
     {
         const char *opts   = DEFAULT_OPTIONS;
         const char *dbfile = DEFAULT_DATABASE;
-        bool skipDaemon = false;
         bool initialiseDatabase = true;
         bool doClient = true;
         const char *envopts = std::getenv ("FEEDD_OPTIONS");

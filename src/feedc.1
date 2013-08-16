@@ -1,0 +1,45 @@
+.TH feedc 1 "AUGUST 2013" FEED "Application Manuals"
+
+.SH NAME
+feedc \- read syndication feeds
+
+.SH SYNOPSIS
+.B feed [--database
+.I database-file
+.B ] [
+.I query
+.B ] [
+.I macro
+.B ]
+
+.SH DESCRIPTION
+.B feedc
+provides the same functionality as
+.BR feed (1),
+but without ever starting the daemon. The command line option
+.B --daemon
+is recognised, but ignored. In effect, using
+.B feedc
+is like using
+.B feed
+while always specifying
+.B --skip-daemon
+- see the man page for
+.BR feed (1)
+for more details on supported queries and macros.
+
+.SH ENVIRONMENT
+.IP FEED_DATABASE
+The database file to use.
+.I --database
+overrides this, and if neither is specified then the built in default file name
+.B data.feed
+is used and the database is put in the current directory.
+
+.SH AUTHOR
+Magnus Deininger <magnus@ef.gy>
+
+.SH "SEE ALSO"
+.BR feedd (1),
+.BR feed (1),
+.BR sqlite3 (1)
