@@ -37,6 +37,7 @@
 #include <sstream>
 #include <algorithm>
 #include <boost/tokenizer.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace feed
 {
@@ -111,12 +112,13 @@ namespace feed
             return true;
         }
 
-        bool process (std::vector<std::string> &block, const std::string &line)
+        bool process (std::vector<std::string> &block, std::string &line)
         {
-            static const boost::regex mime("^\\s*([\\w;=, -]+):\\s*([^\r]*)\r?");
+            static const boost::regex mime("^\\s*([\\w;=, -]+):\\s*(.*)");
             static const boost::regex attr("^([^;]*);(.*)$");
             static const boost::regex attre("^([^=]*)=(.*)$");
             boost::smatch matches;
+            boost::erase_all(line, "\r");
 
             if (!boost::regex_match(line, matches, mime))
             {
@@ -194,11 +196,11 @@ namespace feed
                              it2 != it->second.end();
                              it2++)
                         {
-                            std::cerr << " . " << *it2;
+                            std::cerr << *it2 << " ";
                         }
                         std::cerr << "\n";
                     }
-                } 
+                }
             }
 
             return true;
