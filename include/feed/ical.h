@@ -43,9 +43,129 @@ namespace feed
 {
     class ical : public handler
     {
+    protected:
+        sqlite::statement selectBlock;
+        sqlite::statement insertBlock;
+        sqlite::statement insertProperty;
+        sqlite::statement insertAttribute;
+
+        class block
+        {
+        public:
+            block(ical &pContext)
+                : context(pContext),
+                  uid(),
+                  type(), key(), value(), attributes(), autocommit(false)
+            {}
+
+            block(const block &b)
+                : context(b.context),
+                  uid(b.uid),
+                  type(b.type), key(b.key), value(b.value), attributes(b.attributes), autocommit(false)
+            {}
+
+            ~block(void)
+            {
+                try
+                {
+                    autocommit && commit();
+                }
+                catch (exception &e)
+                {
+                    std::cerr << "ical::block::~block: EXCEPTION: " << e.string << "\n";
+                }
+            }
+
+            block &operator = (block &b)
+            {
+                uid        = b.uid;
+                type       = b.type;
+                key        = b.key;
+                value      = b.value;
+                attributes = b.attributes;
+                b.autocommit = false;
+                return *this;
+            }
+
+            bool commit (void)
+            {
+                if (uid != "")
+                {
+                    int ibid = -1;
+
+                    std::cerr << "commit: type=" << type << ": " << uid << "\n";
+                    context.selectBlock.bind(1, uid);
+                    if (context.selectBlock.step() && context.selectBlock.row)
+                    {
+                        context.selectBlock.get(0, ibid);
+                    }
+                    context.selectBlock.reset();
+
+                    if (ibid < 0)
+                    {
+                        context.insertBlock.bind(1, uid);
+                        context.insertBlock.bind(2, type);
+                        context.insertBlock.step();
+                        ibid = sqlite3_last_insert_rowid(context.context.sql);
+                        context.insertBlock.reset();
+                    }
+
+                    context.insertProperty.bind(1, ibid);
+
+                    std::vector<std::string>::iterator ik = key.begin();
+                    std::vector<std::string>::iterator iv = value.begin();
+                    std::vector<std::map<std::string,std::vector<std::string> > >::iterator ia = attributes.begin();
+
+                    while ((ik != key.end()) && (iv != value.end()) && (ia != attributes.end()))
+                    {
+                        context.insertProperty.bind(2, *ik);
+                        context.insertProperty.bind(3, *iv);
+                        context.insertProperty.step();
+                        int ipid = sqlite3_last_insert_rowid(context.context.sql);
+                        context.insertProperty.reset();
+
+                        context.insertAttribute.bind(1, ipid);
+                        for (std::map<std::string,std::vector<std::string> >::iterator it = ia->begin();
+                             it != ia->end();
+                             it++)
+                        {
+                            context.insertAttribute.bind(2, it->first);
+                            for (std::vector<std::string>::iterator it2 = it->second.begin();
+                                 it2 != it->second.end();
+                                 it2++)
+                            {
+                                context.insertAttribute.bind(3, *it2);
+                                context.insertAttribute.stepReset();
+                            }
+                        }
+
+                        ik++;
+                        iv++;
+                        ia++;
+                    }
+                }
+
+                return true;
+            }
+
+            std::string uid;
+            std::string type;
+            std::vector<std::string> key;
+            std::vector<std::string> value;
+            std::vector<std::map<std::string,std::vector<std::string> > > attributes;
+            bool autocommit;
+
+        protected:
+            ical &context;
+        };
+
     public:
         ical(configuration &pConfiguration, const bool &pEnabled, download &pDownload)
-            : handler(pConfiguration, stICal, pEnabled), download(pDownload)
+            : handler(pConfiguration, stICal, pEnabled), download(pDownload),
+              selectBlock("select id from icalblock where uid=?1", context.sql),
+              insertBlock("insert or replace into icalblock (uid, type) values (?1, ?2)", context.sql),
+              insertProperty("insert or replace into icalproperty (ibid, key, value) values (?1, ?2, ?3)", context.sql),
+              insertAttribute("insert or replace into icalattribute (ipid, key, value) values (?1, ?2, ?3)", context.sql)
         {}
 
         virtual bool handle
@@ -69,7 +189,8 @@ namespace feed
                 static const boost::regex folded("^\\s(.*)");
                 std::istringstream is(data.content);
 
-                std::vector<std::string> block;
+                std::vector<std::string> blocks;
+                std::vector<block> blockdata;
                 std::string line;
                 bool havedata = false;
 
@@ -87,7 +208,7 @@ namespace feed
 
                         if (havedata)
                         {
-                            process (block, line);
+                            process (blocks, blockdata, line);
                             havedata = false;
                         }
 
@@ -101,7 +222,7 @@ namespace feed
 
                 if (havedata)
                 {
-                    process (block, line);
+                    process (blocks, blockdata, line);
                 }
             }
             catch (exception &e)
@@ -112,7 +233,8 @@ namespace feed
             return true;
         }
 
-        bool process (std::vector<std::string> &block, std::string &line)
+    protected:
+        bool process (std::vector<std::string> &blocks, std::vector<block> &blockdata, std::string &line)
         {
             static const boost::regex mime("^\\s*([\\w;=, -]+):\\s*(.*)");
             static const boost::regex attr("^([^;]*);(.*)$");
@@ -131,13 +253,13 @@ namespace feed
             std::string valuel = value;
             std::transform(keyl.begin(),   keyl.end(),   keyl.begin(),   (int(*)(int))std::tolower);
             std::transform(valuel.begin(), valuel.end(), valuel.begin(), (int(*)(int))std::tolower);
-            std::string cblock = "";
+            std::string cblocks = "";
             std::map<std::string,std::vector<std::string> > attributes;
             std::string attribute = keyl;
             bool haveattribute = false;
-            if (block.size() > 0)
+            if (blocks.size() > 0)
             {
-                cblock = block.back();
+                cblocks = blocks.back();
             }
 
             for (bool first = true; boost::regex_match(attribute, matches, attr); first = false)
@@ -176,37 +298,33 @@ namespace feed
 
             if (keyl == "begin")
             {
-                block.push_back(valuel);
+                blocks.push_back(valuel);
+                blockdata.push_back(block(*this));
+                blockdata.back().type       = valuel;
+                blockdata.back().autocommit = true;
             }
-            else if ((block.size() > 0) && (keyl == "end"))
+            else if ((blocks.size() > 0) && (keyl == "end"))
             {
-                block.pop_back();
+                blocks.pop_back();
+                blockdata.pop_back();
             }
-            else
+            else if (blockdata.size() > 0)
             {
-                std::cerr << cblock << "::" << keyl << "(" << attributes.size() << ")" << "=" << value << "\n";
-                if (attributes.size() > 0)
+                if (keyl == "uid")
                 {
-                    for (std::map<std::string,std::vector<std::string> >::iterator it = attributes.begin();
-                         it != attributes.end();
-                         it++)
-                    {
-                        std::cerr << "[" << it->first << "] = ";
-                        for (std::vector<std::string>::iterator it2 = it->second.begin();
-                             it2 != it->second.end();
-                             it2++)
-                        {
-                            std::cerr << *it2 << " ";
-                        }
-                        std::cerr << "\n";
-                    }
+                    blockdata.back().uid      = valuel;
+                }
+                else
+                {
+                    blockdata.back().key       .push_back(keyl);
+                    blockdata.back().value     .push_back(value);
+                    blockdata.back().attributes.push_back(attributes);
                 }
             }
 
             return true;
         }
 
-    protected:
         download &download;
     };
 };

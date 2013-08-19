@@ -80,7 +80,7 @@ data.feed: src/feed.sql
 	$(SQLITE3) $@ < $<
 
 reset:
-	$(SQLITE3) $${FEED_DATABASE} 'update option set value=1 where otid=-1'
+	$(SQLITE3) $${FEED_DATABASE} 'update option set value=$(VERSION) where otid=-1'
 
 bin/.volatile:
 	mkdir $(dir $@); true
