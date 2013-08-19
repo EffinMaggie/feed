@@ -53,6 +53,149 @@ create table icalattribute
     foreign key (ipid) references icalproperty(id)
 );
 
+-- specific iCal block tables
+
+drop table if exists icalbody;
+drop table if exists icalevent;
+drop table if exists icaltodo;
+drop table if exists icaljournal;
+drop table if exists icalfreebusy;
+drop table if exists icalrecurrence;
+
+create table icalbody
+(
+    id integer not null primary key,
+    ibid integer not null,
+    uid text not null unique,
+    prodid text,
+    version,
+    calscale,
+    method,
+
+    foreign key (ibid) references icalblock(id)
+);
+
+create table icalevent
+(
+    id integer not null primary key,
+    ibid integer not null,
+    uid text not null unique,
+    dtstamp numeric,
+    dtstart numeric,
+    class,
+    created,
+    description,
+    geo,
+    lastmod,
+    location,
+    organizer,
+    priority,
+    seq,
+    status,
+    summary,
+    transp,
+    url,
+    recurid,
+    dtend,
+    duration,
+
+    foreign key (ibid) references icalblock(id)
+);
+
+create trigger icalblockInsertEvent after insert on icalblock
+for each row when new.type = 'vevent' begin
+    insert or ignore into icalevent
+        (ibid, uid)
+        values
+        (new.id, new.uid);
+end;
+
+-- missing fields that may occur an arbitrary number of times in vevents:
+-- attach, attendee, categories, comment, contact, exdate, rstatus, related,
+-- resources, rdate
+
+create table icaltodo
+(
+    id integer not null primary key,
+    ibid integer not null,
+    uid text not null unique,
+    dtstamp numeric,
+    class,
+    completed,
+    created,
+    description,
+    dtstart numeric,
+    geo,
+    lastmod,
+    location,
+    organizer,
+    percent,
+    priority,
+    recurid,
+    seq,
+    status,
+    summary,
+    url,
+    due,
+    duration,
+
+    foreign key (ibid) references icalblock(id)
+);
+
+-- missing fields that may occur an arbitrary number of times in vtodos:
+-- attach, attendee, categories, comment, contact, exdate, rstatus, related,
+-- resources, rdate
+
+create table icaljournal
+(
+    id integer not null primary key,
+    ibid integer not null,
+    uid text not null unique,
+    dtstamp numeric,
+    class,
+    created,
+    dtstart,
+    lastmod,
+    organizer,
+    recurid,
+    seq,
+    status,
+    summary,
+    url,
+
+    foreign key (ibid) references icalblock(id)
+);
+
+-- missing fields that may occur an arbitrary number of times in vjournals:
+-- attach, attendee, categories, comment, contact, description, exdate,
+-- related, rdate, rstatus
+
+create table icalfreebusy
+(
+    id integer not null primary key,
+    ibid integer not null,
+    uid text not null unique,
+    dtstamp numeric,
+    contact,
+    dtstart numeric,
+    dtend numeric,
+    organizer,
+    url,
+
+    foreign key (ibid) references icalblock(id)
+);
+
+-- missing fields that may occur an arbitrary number of times in vfreebusy:
+-- attendee, comment, freebusy, rstatus
+
+-- occurs in vevent, vtodo, vjournal
+
+create table icalrecurrence
+(
+    uid text not null
+    -- this table definition is still incomplete
+);
+
 -- feed-graph views
 
 drop view if exists vgraphnodes;
