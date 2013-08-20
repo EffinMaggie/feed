@@ -1,6 +1,8 @@
 #!/bin/bash
 
 sqlite3 $FEED_DATABASE > feed.dot <<SQL
+begin immediate transaction;
+
 drop view if exists vgraphnodes;
 create view vgraphnodes as
 select 'ne' || id as nid,
@@ -65,6 +67,8 @@ select nid1 || ' -- ' || nid2 || ' [ '|| attributes || ' ];'
 union all
 select '}'
 ;
+
+commit transaction;
 SQL
 
 dot -Tsvg -ofeed.svg feed.dot
