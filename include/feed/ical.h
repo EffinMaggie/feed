@@ -93,7 +93,6 @@ namespace feed
                 {
                     int ibid = -1;
 
-                    std::cerr << "commit: type=" << type << ": " << uid << "\n";
                     context.selectBlock.bind(1, uid);
                     if (context.selectBlock.step() && context.selectBlock.row)
                     {
@@ -143,6 +142,8 @@ namespace feed
                         iv++;
                         ia++;
                     }
+
+                    std::cerr << "i";
                 }
 
                 return true;
@@ -311,6 +312,10 @@ namespace feed
             else if (blockdata.size() > 0)
             {
                 if (keyl == "uid")
+                {
+                    blockdata.back().uid      = valuel;
+                }
+                else if ((keyl == "tzid") && (blockdata.back().uid == ""))
                 {
                     blockdata.back().uid      = valuel;
                 }

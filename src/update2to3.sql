@@ -60,6 +60,7 @@ drop table if exists icalevent;
 drop table if exists icaltodo;
 drop table if exists icaljournal;
 drop table if exists icalfreebusy;
+drop table if exists icaltimezone;
 drop table if exists icalrecurrence;
 
 create table icalbody
@@ -101,14 +102,6 @@ create table icalevent
 
     foreign key (ibid) references icalblock(id)
 );
-
-create trigger icalblockInsertEvent after insert on icalblock
-for each row when new.type = 'vevent' begin
-    insert or ignore into icalevent
-        (ibid, uid)
-        values
-        (new.id, new.uid);
-end;
 
 -- missing fields that may occur an arbitrary number of times in vevents:
 -- attach, attendee, categories, comment, contact, exdate, rstatus, related,
@@ -188,6 +181,20 @@ create table icalfreebusy
 -- missing fields that may occur an arbitrary number of times in vfreebusy:
 -- attendee, comment, freebusy, rstatus
 
+create table icaltimezone
+(
+    id integer not null primary key,
+    ibid integer not null,
+    tzid text not null unique,
+    lastmod,
+    tzurl,
+
+    foreign key (ibid) references icalblock(id)
+);
+
+-- missing sub blocks in icaltimezone:
+-- standard, daylight
+
 -- occurs in vevent, vtodo, vjournal
 
 create table icalrecurrence
@@ -196,53 +203,303 @@ create table icalrecurrence
     -- this table definition is still incomplete
 );
 
--- feed-graph views
+-- automatically insert the right type of block when a new one is created
 
-drop view if exists vgraphnodes;
-create view vgraphnodes as
-select 'ne' || id as nid,
-       0.1 as margin,
-       replace(replace(coalesce ((select value from entrymeta where mid=1 and eid=entry.id), 'entry #' || id), '"', ''''), '
-', '') as title,
-       replace(replace((select value from entrymeta where mid=10 and eid=entry.id), '"', ''''), '
-', '') as uri
-  from entry
- where exists (select value from entrymeta where mid=11 and eid=entry.id)
-    or exists (select id from feed where source = (select value from entrymeta where mid=10 and eid=entry.id))
-union
-select 'np' || id as nid,
-       0.2 as margin,
-       (select coalesce(name,email,uri,'person #' || pid) from vperson where pid=person.id) as title,
-       (select coalesce(uri,'mailto:' || email,null) from vperson where pid=person.id) as uri
-  from person;
+drop trigger if exists icalblockInsertEvent;
+create trigger icalblockInsertEvent after insert on icalblock
+for each row when new.type = 'vevent' begin
+    insert or ignore into icalevent
+        (ibid, uid)
+        values
+        (new.id, new.uid);
+end;
 
-drop view if exists vgraphedges;
-create view vgraphedges as
-select distinct
-       'ne' || eid1 as nid1,
-       'ne' || eid2 as nid2,
-       'color="blue" weight=1 len=3' as attributes
- from entryrelation where eid1 <> eid2
-union
-select distinct
-       'np' || pid as nid1,
-       'ne' || eid as nid2,
-       'color="red" weight=1.5 len=4' as attributes
-  from entryperson
-union
-select distinct
-       'ne' || (select eid from entrymeta as m2 where mid=10 and m1.value = m2.value) as nid1,
-       'ne' || eid as nid2,
-       'color="purple" weight=4 len=5' as attributes
-  from entrymeta as m1
- where mid=11
-;
+drop trigger if exists icalblockInsertTodo;
+create trigger icalblockInsertTodo after insert on icalblock
+for each row when new.type = 'vtodo' begin
+    insert or ignore into icaltodo
+        (ibid, uid)
+        values
+        (new.id, new.uid);
+end;
 
-drop view if exists vegraphedges;
-create view vegraphedges as
-select distinct
-       nid1, nid2, attributes
-  from vgraphedges, vgraphnodes as n1, vgraphnodes as n2
- where vgraphedges.nid1 = n1.nid
-   and vgraphedges.nid2 = n2.nid
-;
+drop trigger if exists icalblockInsertJournal;
+create trigger icalblockInsertJournal after insert on icalblock
+for each row when new.type = 'vjournal' begin
+    insert or ignore into icaljournal
+        (ibid, uid)
+        values
+        (new.id, new.uid);
+end;
+
+drop trigger if exists icalblockInsertFreebusy;
+create trigger icalblockInsertFreebusy after insert on icalblock
+for each row when new.type = 'vfreebusy' begin
+    insert or ignore into icalfreebusy
+        (ibid, uid)
+        values
+        (new.id, new.uid);
+end;
+
+drop trigger if exists icalblockInsertTimezone;
+create trigger icalblockInsertTimezone after insert on icalblock
+for each row when new.type = 'vtimezone' begin
+    insert or ignore into icaltimezone
+        (ibid, tzid)
+        values
+        (new.id, new.uid);
+end;
+
+-- automatically fill in fields
+
+drop trigger if exists icalattributeInsertDtstamp;
+create trigger icalattributeInsertDtstamp after insert on icalproperty
+for each row when new.key = 'dtstamp' begin
+    update icalevent
+       set dtstamp = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set dtstamp = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set dtstamp = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icalfreebusy
+       set dtstamp = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertDtstart;
+create trigger icalattributeInsertDtstart after insert on icalproperty
+for each row when new.key = 'dtstart' begin
+    update icalevent
+       set dtstart = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set dtstart = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set dtstart = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icalfreebusy
+       set dtstart = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertClass;
+create trigger icalattributeInsertClass after insert on icalproperty
+for each row when new.key = 'class' begin
+    update icalevent
+       set class = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set class = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set class = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertCreated;
+create trigger icalattributeInsertCreated after insert on icalproperty
+for each row when new.key = 'created' begin
+    update icalevent
+       set created = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set created = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set created = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertDescription;
+create trigger icalattributeInsertDescription after insert on icalproperty
+for each row when new.key = 'description' begin
+    update icalevent
+       set description = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set description = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertGeo;
+create trigger icalattributeInsertGeo after insert on icalproperty
+for each row when new.key = 'geo' begin
+    update icalevent
+       set geo = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set geo = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertLastmod;
+create trigger icalattributeInsertLastmod after insert on icalproperty
+for each row when new.key = 'last-mod' begin
+    update icalevent
+       set lastmod = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set lastmod = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set lastmod = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltimezone
+       set lastmod = new.value
+     where tzid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertLocation;
+create trigger icalattributeInsertLocation after insert on icalproperty
+for each row when new.key = 'location' begin
+    update icalevent
+       set location = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set location = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertOrganizer;
+create trigger icalattributeInsertOrganizer after insert on icalproperty
+for each row when new.key = 'organizer' begin
+    update icalevent
+       set organizer = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set organizer = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set organizer = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icalfreebusy
+       set organizer = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertPriority;
+create trigger icalattributeInsertPriority after insert on icalproperty
+for each row when new.key = 'priority' begin
+    update icalevent
+       set priority = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set priority = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInserSeq;
+create trigger icalattributeInsertSeq after insert on icalproperty
+for each row when new.key = 'seq' begin
+    update icalevent
+       set seq = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set seq = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set seq = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInserStatus;
+create trigger icalattributeInsertStatus after insert on icalproperty
+for each row when new.key = 'status' begin
+    update icalevent
+       set status = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set status = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set status = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertSummary;
+create trigger icalattributeInsertSummary after insert on icalproperty
+for each row when new.key = 'summary' begin
+    update icalevent
+       set status = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set status = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set status = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertTransp;
+create trigger icalattributeInsertTransp after insert on icalproperty
+for each row when new.key = 'transp' begin
+    update icalevent
+       set status = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertUrl;
+create trigger icalattributeInsertUrl after insert on icalproperty
+for each row when new.key = 'url' begin
+    update icalevent
+       set url = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set url = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set url = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icalfreebusy
+       set url = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertTzurl;
+create trigger icalattributeInsertTzurl after insert on icalproperty
+for each row when new.key = 'tzurl' begin
+    update icaltimezone
+       set tzurl = new.value
+     where tzid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertRecurid;
+create trigger icalattributeInsertRecurid after insert on icalproperty
+for each row when new.key = 'recurid' begin
+    update icalevent
+       set recurid = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set recurid = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaljournal
+       set recurid = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertDtend;
+create trigger icalattributeInsertDtend after insert on icalproperty
+for each row when new.key = 'dtend' begin
+    update icalevent
+       set dtend = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icalfreebusy
+       set dtend = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
+drop trigger if exists icalattributeInsertDuration;
+create trigger icalattributeInsertDuration after insert on icalproperty
+for each row when new.key = 'duration' begin
+    update icalevent
+       set duration = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+    update icaltodo
+       set duration = new.value
+     where uid = (select uid from icalblock where id = new.ibid);
+end;
+
