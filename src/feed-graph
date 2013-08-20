@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sqlite3 $FEED_DATABASE > feed.dot <<SQL
+sqlite3 $FEED_DATABASE <<SQL | dot -Tsvg
 begin immediate transaction;
 
 drop view if exists vgraphnodes;
@@ -70,5 +70,3 @@ select '}'
 
 commit transaction;
 SQL
-
-dot -Tsvg -ofeed.svg feed.dot
