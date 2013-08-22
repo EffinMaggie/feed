@@ -1,6 +1,16 @@
 #!/bin/bash
 
-sqlite3 $FEED_DATABASE <<SQL | dot -Tsvg
+commandinitial="cat"
+commandpass="cat"
+commandfinal="sfdp -Goverlap=prism -Tsvg"
+
+if which gvmap >/dev/null; then
+    commandinitial="sfdp -Goverlap=prism"
+    commandpass="gvmap -e"
+    commandfinal="neato -n2 -Tsvg"
+fi;
+
+sqlite3 $FEED_DATABASE <<SQL | ${commandinitial} | ${commandpass} | ${commandfinal}
 begin immediate transaction;
 
 drop view if exists vgraphnodes;
@@ -32,7 +42,7 @@ union
 select distinct
        'np' || pid as nid1,
        'ne' || eid as nid2,
-       'color="red" weight=1.5 len=4' as attributes
+       'color="red" weight=1.5 len=4 style=dashed' as attributes
   from entryperson
 union
 select distinct
@@ -52,14 +62,14 @@ select distinct
    and vgraphedges.nid2 = n2.nid
 ;
 
-select 'graph FEED { overlap=true; layout=neato; nodesep=1; sep=1; maxiter=500; '
+select 'graph FEED { '
 union all
 select distinct
        nid
     || ' [ margin=' || margin
     || coalesce(' label="' || title || '"','')
     || coalesce(' URL="' || uri || '"','')
-    || ' color=transparent shape=plaintext fontsize=12 ];'
+    || ' color=transparent shape=plaintext fontsize=10 ];'
   from vgraphnodes
 union all
 select nid1 || ' -- ' || nid2 || ' [ '|| attributes || ' ];'
