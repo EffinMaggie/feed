@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string.hpp>
+#include <cmath>
 
 namespace feed
 {
@@ -115,10 +116,45 @@ namespace feed
                     std::vector<std::string>::iterator iv = value.begin();
                     std::vector<std::map<std::string,std::vector<std::string> > >::iterator ia = attributes.begin();
 
+                    static const boost::regex rdate("^(\\-|\\+)?(\\d{4})(\\d{2})(\\d{2})(T(\\d{2})(\\d{2})(\\d){2})?(Z|((\\-|\\+)\\d{4}))?$");
+
                     while ((ik != key.end()) && (iv != value.end()) && (ia != attributes.end()))
                     {
+                        boost::smatch matches;
                         context.insertProperty.bind(2, *ik);
-                        context.insertProperty.bind(3, *iv);
+                        if (boost::regex_match(*iv, matches, rdate))
+                        {
+                            std::stringstream ss;
+                            ss << matches[2] << " " << matches[3] << " " << matches[4] << " " << matches[6] << " " << matches[7] << " " << matches[8] << "\n";
+                            int year, month, day, hour, minute, second;
+                            ss >> year >> month >> day >> hour >> minute >> second;
+
+                            int a = std::floor(double(14-month)/12.0);
+                            int y = year + 4800 - a;
+                            int m = month + 12*a - 3;
+
+                            double jdn = day
+                                       + std::floor((double(153*m) + 2.0) / 5.0)
+                                       + 365 * y
+                                       + std::floor(double(y) / 4.0)
+                                       - std::floor(double(y) / 100.0)
+                                       + std::floor(double(y) / 400.0)
+                                       - 32045
+                                       + (double(hour) - 12.0) / 24.0
+                                       + double(minute) / 1440.0
+                                       + double(second) / 86400.0;
+
+                            if (matches[1] == "-")
+                            {
+                                jdn *= -1;
+                            }
+
+                            context.insertProperty.bind(3, jdn);
+                        }
+                        else
+                        {
+                            context.insertProperty.bind(3, *iv);
+                        }
                         context.insertProperty.step();
                         int ipid = sqlite3_last_insert_rowid(context.context.sql);
                         context.insertProperty.reset();

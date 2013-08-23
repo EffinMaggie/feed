@@ -35,7 +35,7 @@ create table icalproperty
 
     ibid integer not null,
 
-    unique (ibid, key, value)
+    unique (ibid, key, value),
 
     foreign key (ibid) references icalblock(id)
 );
@@ -424,13 +424,13 @@ drop trigger if exists icalattributeInsertSummary;
 create trigger icalattributeInsertSummary after insert on icalproperty
 for each row when new.key = 'summary' begin
     update icalevent
-       set status = new.value
+       set summary = new.value
      where uid = (select uid from icalblock where id = new.ibid);
     update icaltodo
-       set status = new.value
+       set summary = new.value
      where uid = (select uid from icalblock where id = new.ibid);
     update icaljournal
-       set status = new.value
+       set summary = new.value
      where uid = (select uid from icalblock where id = new.ibid);
 end;
 
@@ -503,3 +503,57 @@ for each row when new.key = 'duration' begin
      where uid = (select uid from icalblock where id = new.ibid);
 end;
 
+-- update feed entries for related ical block updates
+
+drop trigger if exists icaleventupdate;
+create trigger icaleventupdate after update on icalevent
+for each row begin
+    insert or ignore into entry
+        (xid)
+        values
+        (new.uid);
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               11 as mid,
+               'ical:' || new.uid as value
+          from entry
+         where entry.xid = new.uid;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               1 as mid,
+               new.summary as value
+          from entry
+         where entry.xid = new.uid
+           and new.summary is not null;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               6 as mid,
+               new.description as value
+          from entry
+         where entry.xid = new.uid
+           and new.description is not null;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               4 as mid,
+               new.lastmod as value
+          from entry
+         where entry.xid = new.uid
+           and new.lastmod is not null;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               5 as mid,
+               new.dtstamp as value
+          from entry
+         where entry.xid = new.uid
+           and new.dtstamp is not null;
+end;
