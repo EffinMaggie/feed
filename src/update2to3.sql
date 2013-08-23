@@ -508,16 +508,32 @@ end;
 drop trigger if exists icaleventupdate;
 create trigger icaleventupdate after update on icalevent
 for each row begin
-    insert or ignore into entry
+    insert into entry
         (xid)
-        values
-        (new.uid);
+        select new.uid
+         where not exists (select 1 from entry where xid=new.uid);
 
     insert or replace into entrymeta
         (eid, mid, value)
         select entry.id as eid,
                11 as mid,
                'ical:' || new.uid as value
+          from entry
+         where entry.xid = new.uid;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               8 as mid,
+               'text/plain' as value
+          from entry
+         where entry.xid = new.uid;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               9 as mid,
+               'UTF-8' as value
           from entry
          where entry.xid = new.uid;
 
@@ -542,6 +558,15 @@ for each row begin
     insert or replace into entrymeta
         (eid, mid, value)
         select entry.id as eid,
+               7 as mid,
+               new.description as value
+          from entry
+         where entry.xid = new.uid
+           and new.description is not null;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
                4 as mid,
                new.lastmod as value
           from entry
@@ -556,4 +581,13 @@ for each row begin
           from entry
          where entry.xid = new.uid
            and new.dtstamp is not null;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               10 as mid,
+               new.url as value
+          from entry
+         where entry.xid = new.uid
+           and new.url is not null;
 end;
