@@ -508,10 +508,10 @@ end;
 drop trigger if exists icaleventupdate;
 create trigger icaleventupdate after update on icalevent
 for each row begin
-    insert into entry
+    insert or ignore into entry
         (xid)
-        select new.uid
-         where not exists (select 1 from entry where xid=new.uid);
+        values
+        (new.uid);
 
     insert or replace into entrymeta
         (eid, mid, value)
