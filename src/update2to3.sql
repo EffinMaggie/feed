@@ -11,6 +11,13 @@ insert or replace into service
     ( 4, 'iCal reader', 0.1, 1, 1, 1)
 ;
 
+insert or replace into meta
+    (id, description)
+    values
+    (16, 'date and time, beginning of event'),
+    (17, 'date and time, end of event')
+;
+
 -- iCal tables and views
 
 drop table if exists icalblock;
@@ -505,14 +512,18 @@ end;
 
 -- update feed entries for related ical block updates
 
-drop trigger if exists icaleventupdate;
-create trigger icaleventupdate after update on icalevent
+drop trigger if exists icaleventinsert;
+create trigger icaleventinsert after insert on icalevent
 for each row begin
     insert or ignore into entry
         (xid)
         values
         (new.uid);
+end;
 
+drop trigger if exists icaleventupdate;
+create trigger icaleventupdate after update on icalevent
+for each row begin
     insert or replace into entrymeta
         (eid, mid, value)
         select entry.id as eid,
@@ -590,6 +601,24 @@ for each row begin
           from entry
          where entry.xid = new.uid
            and new.url is not null;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               16 as mid,
+               new.dtstart as value
+          from entry
+         where entry.xid = new.uid
+           and new.dtstart is not null;
+
+    insert or replace into entrymeta
+        (eid, mid, value)
+        select entry.id as eid,
+               17 as mid,
+               new.dtend as value
+          from entry
+         where entry.xid = new.uid
+           and new.dtend is not null;
 end;
 
 -- sequence generator
@@ -669,6 +698,74 @@ create table jdn2gregorian
     leap boolean
 );
 
+drop table if exists calendarMonthScheme;
+create table calendarMonthScheme
+(
+    id integer not null primary key,
+    name text
+);
+
+insert into calendarMonthScheme
+    (id, name)
+    values
+    ( 2, 'Gregorian/Julian, regular year'),
+    ( 3, 'Gregorian/Julian, leap year')
+;
+
+drop table if exists month;
+create table month
+(
+    id integer not null primary key,
+    cmsid integer not null,
+    month integer not null,
+    name text not null,
+    length integer not null,
+
+    foreign key (cmsid) references calendarMonthScheme(id)
+);
+
+insert into month
+    (cmsid, month, name, length)
+    values
+    ( 2, 1,  'January',   31),
+    ( 2, 2,  'February',  28),
+    ( 2, 3,  'March',     31),
+    ( 2, 4,  'April',     30),
+    ( 2, 5,  'May',       31),
+    ( 2, 6,  'June',      30),
+    ( 2, 7,  'July',      31),
+    ( 2, 8,  'August',    31),
+    ( 2, 9,  'September', 30),
+    ( 2, 10, 'October',   31),
+    ( 2, 11, 'November',  30),
+    ( 2, 12, 'December',  31),
+    ( 3, 1,  'January',   31),
+    ( 3, 2,  'February',  29),
+    ( 3, 3,  'March',     31),
+    ( 3, 4,  'April',     30),
+    ( 3, 5,  'May',       31),
+    ( 3, 6,  'June',      30),
+    ( 3, 7,  'July',      31),
+    ( 3, 8,  'August',    31),
+    ( 3, 9,  'September', 30),
+    ( 3, 10, 'October',   31),
+    ( 3, 11, 'November',  30),
+    ( 3, 12, 'December',  31)
+;
+
+drop view if exists vamonth;
+create view vamonth as
+select m1.cmsid,
+       m1.month,
+       m1.name,
+       m1.length,
+       sum(m2.length) as alength
+  from month as m1,
+       month as m2
+ where m1.month >= m2.month
+   and m1.cmsid = m2.cmsid
+ group by m1.cmsid, m1.month;
+
 drop trigger if exists jdn2gregorianInsert;
 create trigger jdn2gregorianInsert after insert on jdn2gregorian
 for each row begin
@@ -697,4 +794,44 @@ for each row begin
     update jdn2gregorian
        set leap = ((year % 4 = 0) and not ((year % 100 = 0) or (year % 400 = 0)))
      where id = new.id;
+
+    update jdn2gregorian
+       set month = (select vamonth.month
+                      from vamonth
+                     where 2 + jdn2gregorian.leap = cmsid
+                       and yday <= alength
+                     order by vamonth.month asc limit 1)
+     where id = new.id;
+
+    update jdn2gregorian
+       set day = yday
+               - coalesce((select vamonth.alength
+                             from vamonth
+                            where 2 + jdn2gregorian.leap = cmsid
+                              and vamonth.month = jdn2gregorian.month - 1),
+                          0)
+     where id = new.id;
 end;
+
+-- event data
+
+drop view if exists veventa;
+create view veventa as
+select entry.id as eid,
+       entry.xid as xid,
+       coalesce((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 1), 'no description') as title,
+       coalesce(julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 16)), 0) as eventstart,
+       coalesce(julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 17)),
+                julianday((select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 16))) as eventend,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 4) as updated,
+       (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 5) as published
+  from entry
+ where (select value from entrymeta where entrymeta.eid = entry.id and entrymeta.mid = 11) is not null
+;
+
+drop view if exists vevent;
+create view vevent as
+select *
+  from veventa
+ where eventstart >= julianday('now') - 0.25
+   and eventstart <= julianday('now') + 2;

@@ -125,7 +125,14 @@ namespace feed
                         if (boost::regex_match(*iv, matches, rdate))
                         {
                             std::stringstream ss;
-                            ss << matches[2] << " " << matches[3] << " " << matches[4] << " " << matches[6] << " " << matches[7] << " " << matches[8] << "\n";
+                                ss << matches[2]
+                            << " " << matches[3]
+                            << " " << matches[4]
+                            << " " << (matches[6] != "" ? matches[6] : std::string("0"))
+                            << " " << (matches[7] != "" ? matches[7] : std::string("0"))
+                            << " " << (matches[8] != "" ? matches[8] : std::string("0"))
+                            << "\n";
+
                             int year, month, day, hour, minute, second;
                             ss >> year >> month >> day >> hour >> minute >> second;
 
