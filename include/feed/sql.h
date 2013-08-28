@@ -109,6 +109,8 @@ namespace feed
 
             bool step (void)
             {
+                int cRetries = 0;
+            retry:
                 switch (sqlite3_step (stmt))
                 {
                     case SQLITE_ROW:
@@ -118,6 +120,13 @@ namespace feed
                     case SQLITE_DONE:
                         row = false;
                         return true;
+                    case SQLITE_BUSY:
+                        if (cRetries < retries)
+                        {
+                            cRetries++;
+                            sleep(1);
+                            goto retry;
+                        }
                     default:
                         throw sqlite::exception("sqlite3_step", sql);
                 }
@@ -181,6 +190,7 @@ namespace feed
         protected:
             sqlite &sql;
             sqlite3_stmt *stmt;
+            static const int retries = 5;
         };
 
         statement prepare (const std::string &pStatement)
@@ -210,12 +220,21 @@ namespace feed
                 sqlite3_stmt *stmt = 0;
                 if (sqlite3_prepare_v2 (database, tail, -1, &stmt, &ntail) == SQLITE_OK)
                 {
-                    if (sqlite3_step(stmt) == SQLITE_ERROR)
+                    switch (sqlite3_step(stmt))
                     {
-                        std::cerr << "import: " << sqlite3_errmsg(database) << "\n";
+                        case SQLITE_ROW:
+                        case SQLITE_OK:
+                        case SQLITE_DONE:
+                            break;
+                        default:
+                            throw exception("import: sqlite3_step", *this);
                     }
                     sqlite3_finalize(stmt);
                     tail = ntail;
+                }
+                else
+                {
+                    throw exception("import: sqlite3_prepare_v2", *this);
                 }
             } while ((tail != 0) && (*tail != (char)0));
 

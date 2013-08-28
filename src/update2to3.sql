@@ -591,3 +591,110 @@ for each row begin
          where entry.xid = new.uid
            and new.url is not null;
 end;
+
+-- sequence generator
+
+drop view if exists vseq1;
+create view vseq1  as select 0 as b union select 1 as b;
+drop view if exists vseq2;
+create view vseq2  as select (b1.b << 1)  | (b0.b) as b from vseq1  as b0, vseq1  as b1;
+drop view if exists vseq4;
+create view vseq4  as select (b1.b << 2)  | (b0.b) as b from vseq2  as b0, vseq2  as b1;
+drop view if exists vseq8;
+create view vseq8  as select (b1.b << 4)  | (b0.b) as b from vseq4  as b0, vseq4  as b1;
+drop view if exists vseq16;
+create view vseq16 as select (b1.b << 8)  | (b0.b) as b from vseq8  as b0, vseq8  as b1;
+drop view if exists vseq32;
+create view vseq32 as select (b1.b << 16) | (b0.b) as b from vseq16 as b0, vseq16 as b1;
+
+drop table if exists seq1;
+create table seq1
+(
+    b integer not null primary key
+);
+drop table if exists seq2;
+create table seq2
+(
+    b integer not null primary key
+);
+drop table if exists seq4;
+create table seq4
+(
+    b integer not null primary key
+);
+drop table if exists seq8;
+create table seq8
+(
+    b integer not null primary key
+);
+drop table if exists seq16;
+create table seq16
+(
+    b integer not null primary key
+);
+
+insert into seq1  select b from vseq1;
+insert into seq2  select b from vseq2;
+insert into seq4  select b from vseq4;
+insert into seq8  select b from vseq8;
+insert into seq16 select b from vseq16;
+
+-- date conversions
+
+drop table if exists jdn2weekday;
+create table jdn2weekday
+(
+    id integer not null primary key,
+    jdn double not null unique,
+    weekday
+);
+
+drop trigger if exists jdn2weekdayInsert;
+create trigger jdn2weekdayInsert after insert on jdn2weekday
+for each row begin
+    update jdn2weekday
+       set weekday = cast (jdn + 0.5 as integer) % 7
+     where id = new.id;
+end;
+
+drop table if exists jdn2gregorian;
+create table jdn2gregorian
+(
+    id integer not null primary key,
+    jdn double not null unique,
+    year integer,
+    month integer,
+    day integer,
+    yday integer,
+    leap boolean
+);
+
+drop trigger if exists jdn2gregorianInsert;
+create trigger jdn2gregorianInsert after insert on jdn2gregorian
+for each row begin
+    update jdn2gregorian
+       set year = 1 + cast ((jdn - 1721424.5) / 365.2425 as integer)
+     where id = new.id;
+
+    update jdn2gregorian
+       set yday = 365
+                - cast (365.2425 * year as integer)
+                + cast (jdn - 1721424.5 as integer)
+     where id = new.id;
+
+    update jdn2gregorian
+       set yday = 366,
+           year = year - 1
+     where id = new.id
+       and yday = 0
+       and (((year - 1) % 4 = 0) and not (((year - 1) % 100 = 0) or ((year - 1) % 400 = 0)));
+
+    update jdn2gregorian
+       set yday = 1
+     where id = new.id
+       and yday = 0;
+
+    update jdn2gregorian
+       set leap = ((year % 4 = 0) and not ((year % 100 = 0) or (year % 400 = 0)))
+     where id = new.id;
+end;
