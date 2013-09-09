@@ -833,5 +833,5 @@ drop view if exists vevent;
 create view vevent as
 select *
   from veventa
- where eventstart >= julianday('now') - 0.25
-   and eventstart <= julianday('now') + 2;
+ where eventstart >= julianday('now') - 10.25
+   and eventend   <= julianday('now') + 12;
