@@ -1,4 +1,4 @@
-###- QUICK AND DIRTY: COMPILATION AND INSTALLATION -############################
+### QUICK AND DIRTY: COMPILATION AND INSTALLATION ##############################
 
 To build the programme, you will need to have libboost-regex, libcurl, libxml2
 and sqlite3 installed, along with their development files (headers) if your
@@ -20,7 +20,15 @@ the programme.
 
 ################################################################################
 
-###- DETAILS -##################################################################
+### MIRRORS ####################################################################
+
+The FEED source code is available at:
+
+  * http://git.becquerel.org/jyujin/feed.git
+  * https://code.google.com/p/feed-cli/
+  * https://github.com/jyujin/feed
+
+### DETAILS ####################################################################
 
 The instructions above should work in almost all cases.
 
@@ -38,7 +46,7 @@ should be all you need.
 
 ################################################################################
 
-###- USAGE -####################################################################
+### USAGE ######################################################################
 
 See the man page for details on how to use FEED:
 
