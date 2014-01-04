@@ -1,0 +1,14 @@
+#!/bin/bash
+
+sqlite3 $FEED_DATABASE <<SQL
+begin immediate transaction;
+
+drop view if exists vcalendarjdn;
+create view vcalendarjdn as
+select 1;
+
+select julianday('now')
+;
+
+commit transaction;
+SQL
